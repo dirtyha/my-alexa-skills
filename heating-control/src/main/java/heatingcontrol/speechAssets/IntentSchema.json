@@ -1,0 +1,55 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "GetPumpParametersIntent"
+    },
+    {
+      "intent": "GetPumpCopIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "fan",
+          "type": "FAN_SPEED"
+        }
+      ],
+      "intent": "SetPumpFanIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "mode",
+          "type": "PUMP_MODE"
+        }
+      ],
+      "intent": "SetPumpModeIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "onoff",
+          "type": "ON_OFF"
+        }
+      ],
+      "intent": "SetPumpPowerIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "temperature",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "SetPumpTemperatureIntent"
+    }
+  ]
+}

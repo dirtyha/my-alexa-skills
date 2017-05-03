@@ -1,0 +1,32 @@
+GetAirQualityIntent tell me air quality
+GetAirQualityIntent tell air quality
+GetAirQualityIntent air quality
+GetAirQualityIntent what is air quality
+GetAirQualityIntent what's air quality
+
+GetPowerConsumptionIntent tell me power consumption
+GetPowerConsumptionIntent tell me power
+GetPowerConsumptionIntent tell power consumption
+GetPowerConsumptionIntent tell power
+GetPowerConsumptionIntent power consumption
+GetPowerConsumptionIntent power
+GetPowerConsumptionIntent what is power consumption
+GetPowerConsumptionIntent what is power
+GetPowerConsumptionIntent what's power consumption
+GetPowerConsumptionIntent what's power
+
+GetTemperatureIntent tell me the temperature
+GetTemperatureIntent tell me temperature
+GetTemperatureIntent tell the temperature
+GetTemperatureIntent tell temperature
+GetTemperatureIntent temperature
+GetTemperatureIntent what is temperature
+GetTemperatureIntent what is the temperature
+GetTemperatureIntent what's temperature
+GetTemperatureIntent what's the temperature
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit

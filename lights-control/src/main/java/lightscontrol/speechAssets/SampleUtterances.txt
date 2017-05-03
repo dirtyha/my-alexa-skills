@@ -1,0 +1,17 @@
+LightsOnIntent switch on {room} 
+LightsOnIntent turn on {room} 
+LightsOnIntent on in {room} 
+LightsOnIntent on {room}
+LightsOnIntent {room} on
+
+LightsOffIntent switch off {room} 
+LightsOffIntent turn off {room} 
+LightsOffIntent off in {room} 
+LightsOffIntent off {room}
+LightsOffIntent {room} off
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit

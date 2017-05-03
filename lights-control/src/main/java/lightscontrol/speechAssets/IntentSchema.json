@@ -1,0 +1,31 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "room",
+          "type": "LIST_OF_ROOMS"
+        }
+      ],
+      "intent": "LightsOnIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "room",
+          "type": "LIST_OF_ROOMS"
+        }
+      ],
+      "intent": "LightsOffIntent"
+    }
+  ]
+}

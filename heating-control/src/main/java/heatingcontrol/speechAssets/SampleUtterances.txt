@@ -1,0 +1,25 @@
+GetPumpParametersIntent parameters
+GetPumpParametersIntent what are parameters
+
+GetPumpCopIntent efficiency
+GetPumpCopIntent what is efficiency
+
+SetPumpFanIntent set fan {fan} 
+SetPumpFanIntent set fan speed {fan} 
+SetPumpFanIntent fan {fan} 
+SetPumpFanIntent fan speed {fan} 
+
+SetPumpModeIntent set mode {mode}
+SetPumpModeIntent mode {mode}
+
+SetPumpPowerIntent set power {onoff}
+SetPumpPowerIntent power {onoff}
+
+SetPumpTemperatureIntent set temperature {temperature} 
+SetPumpTemperatureIntent temperature {temperature} 
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit
