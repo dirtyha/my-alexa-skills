@@ -10,3 +10,5 @@ This skill is capable of monitoring and controlling Mitsubishi FD35 air-to-air h
 ## home-measurements
 This skill is capable of monitoring some temperature and electric power consumption parameters. Temperature measurements are based on 1-wire sensors and power consumption on Cost Control receiver/display and a buch of transmitter modules.
 
+## TODO
+Integrate my Vaisala GMW90 wall transmitter to home automation system and make Alexe speak measured parameters.
