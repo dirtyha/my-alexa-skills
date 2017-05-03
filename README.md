@@ -1,5 +1,5 @@
 # my-alexa-skills
-This repository contains few of my Alexa custom skills. I use these skills to monitor and control my home automation system with voice. All the listed skills connect to my home automation system by using RESTful API calls.
+This repository contains few of my Alexa custom skills. I use these skills to monitor and control my home automation system with voice. All the listed skills connect to my home automation system by using RESTful API calls. These skills have currently not been published in Amazon developer portal since the REST API they use is not following any standards used in commercial home automation systems.
 
 ## lights-control
 This skill provides capability to switch on/off lights at my home. Lights are driven by IHC which is connected to home automation via RS-232 link.
