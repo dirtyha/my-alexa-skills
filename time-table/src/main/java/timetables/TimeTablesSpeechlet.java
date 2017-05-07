@@ -35,7 +35,10 @@ public class TimeTablesSpeechlet implements Speechlet {
     private final HttpRequest wsRequest = new HttpRequest();
     private final Responder responder = new Responder(CARD_TITLE);
     private static final String SESSION_ISWHATNEXT = "isWhatNext";
-    private static final String URL = "http://api.reittiopas.fi/hsl/prod/?request=stop&user=alexa&pass=alexadot&format=json&code=";
+    private static final String USER = System.getenv("user");
+    private static final String PASSWD = System.getenv("passwd");
+    private static final String URL = "http://api.reittiopas.fi/hsl/prod/?request=stop&user=" +
+            USER + "&pass=" + PASSWD + "&format=json&code=";
     private static final String TRAIN_STOP = System.getenv("train_stop");
     private static final String BUS_STOP = System.getenv("bus_stop");
     private static final List<String> LINES = Arrays.asList(System.getenv("lines").split(","));
