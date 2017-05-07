@@ -1,0 +1,13 @@
+NextTrainIntent what is next train
+NextTrainIntent about next train
+NextTrainIntent next train
+
+NextBusIntent what is next bus
+NextBusIntent about next bus
+NextBusIntent next bus
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit
