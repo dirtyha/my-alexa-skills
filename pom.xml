@@ -12,7 +12,7 @@
         <module>lights-control</module>
         <module>heating-control</module>
         <module>home-measurements</module>
-        <module>time-tables</module>
+        <module>time-table</module>
     </modules>
 
 </project>
