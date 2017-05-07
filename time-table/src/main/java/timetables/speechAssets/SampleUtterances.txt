@@ -1,7 +1,9 @@
+NextTrainIntent when is next train
 NextTrainIntent what is next train
 NextTrainIntent about next train
 NextTrainIntent next train
 
+NextBusIntent when is next bus
 NextBusIntent what is next bus
 NextBusIntent about next bus
 NextBusIntent next bus
