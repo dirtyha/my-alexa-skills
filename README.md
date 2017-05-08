@@ -10,5 +10,8 @@ This skill is capable of monitoring and controlling Mitsubishi FD35 air-to-air h
 ## home-measurements
 This skill is capable of monitoring some temperature and electric power consumption parameters. Temperature measurements are based on 1-wire sensors and power consumption on Cost Control receiver/display and a buch of transmitter modules. For example: Alexa, ask my home power consumption.
 
+## time-table
+This skill can query [Helsinki area public transport time tables](http://developer.reittiopas.fi/pages/fi/http-get-interface-version-2.php?lang=EN) and list bus/train departure times for local stops.
+
 ## TODO
 Integrate my Vaisala GMW90 wall transmitter to home automation system and make Alexe speak measured parameters.
