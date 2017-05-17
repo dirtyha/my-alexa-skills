@@ -1,0 +1,14 @@
+StartIntent to start 
+StartIntent start
+
+YesIntent yes
+YesIntent yes please
+
+NoIntent no
+NoIntent no thank you
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit
