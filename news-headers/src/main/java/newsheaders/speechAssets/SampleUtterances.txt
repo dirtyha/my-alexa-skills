@@ -1,6 +1,3 @@
-StartIntent to start 
-StartIntent start
-
 YesIntent yes
 YesIntent yes please
 

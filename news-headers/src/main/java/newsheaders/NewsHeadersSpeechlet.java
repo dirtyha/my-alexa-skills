@@ -61,7 +61,7 @@ public class NewsHeadersSpeechlet implements Speechlet {
                 session.getSessionId());
 
         session.setAttribute(SESSION_ISWHATNEXT, true);
-        return getWelcomeResponse();
+        return handleStartRequest(session);
     }
 
     @Override
@@ -73,9 +73,7 @@ public class NewsHeadersSpeechlet implements Speechlet {
         Intent intent = request.getIntent();
         String intentName = (intent != null) ? intent.getName() : null;
 
-        if ("SartIntent".equals(intentName)) {
-            return handleStartRequest(intent, session);
-        } else if ("AMAZON.HelpIntent".equals(intentName)) {
+        if ("AMAZON.HelpIntent".equals(intentName)) {
             return handleHelpRequest();
         } else if ("AMAZON.StopIntent".equals(intentName)) {
             return responder.tellResponse("Goodbye");
@@ -86,34 +84,30 @@ public class NewsHeadersSpeechlet implements Speechlet {
         }
     }
 
-    private SpeechletResponse getWelcomeResponse() {
-        return responder.askResponse("Ready");
-    }
-
     private SpeechletResponse handleHelpRequest() {
         String speechText = "You can ask news headers.";
 
         return responder.askResponse(speechText);
     }
 
-    private SpeechletResponse handleStartRequest(final Intent intent, final Session session) {
-        String speechText = null;
+    private SpeechletResponse handleStartRequest(final Session session) {
+        StringBuilder sb = new StringBuilder();
 
         List<String> headers = getHeaders();
         if (headers.isEmpty()) {
-            speechText = "No news today.";
+            sb.append("No news today.");
         } else {
             int max = headers.size() > 1 ? 1 : headers.size();
             for (int i = 0; i < max; i++) {
                 if (i != 0) {
-                    speechText += " ";
+                    sb.append(" ");
                 }
-                speechText += headers.get(i);
+                sb.append(headers.get(i));
             }
         }
 
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
-        return responder.respond(speechText, isWhatNext);
+        return responder.respond(sb.toString(), isWhatNext);
     }
 
     private List<String> getHeaders() {
@@ -126,10 +120,10 @@ public class NewsHeadersSpeechlet implements Speechlet {
             doc.getDocumentElement().normalize();
 
             NodeList channels = doc.getElementsByTagName("channel");
-            Element channel = (Element)channels.item(0);
+            Element channel = (Element) channels.item(0);
             NodeList items = channel.getElementsByTagName("item");
             for (int idxItem = 0; idxItem < items.getLength(); idxItem++) {
-                Element item = (Element)items.item(idxItem);
+                Element item = (Element) items.item(idxItem);
                 String title = item.getElementsByTagName("title").item(0).getTextContent();
                 String description = item.getElementsByTagName("description").item(0).getTextContent();
                 headers.add(title + ". " + description);
