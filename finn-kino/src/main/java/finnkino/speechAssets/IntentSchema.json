@@ -1,0 +1,42 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "ListMoviesIntent",
+      "slots": [
+        {
+          "name": "cinema",
+          "type": "LIST_OF_CINEMAS"
+        },
+        {
+          "name": "date",
+          "type": "AMAZON.DATE"
+        }
+      ]
+    },
+    {
+      "intent": "QueryMovieIntent",
+      "slots": [
+        {
+          "name": "cinema",
+          "type": "LIST_OF_CINEMAS"
+        },
+        {
+          "name": "movie",
+          "type": "AMAZON.Movie"
+        }
+      ]
+    },
+    {
+      "intent": "ListCinemasIntent"
+    }
+  ]
+}

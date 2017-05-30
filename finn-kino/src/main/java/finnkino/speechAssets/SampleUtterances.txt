@@ -1,0 +1,29 @@
+ListCinemasIntent list cinemas
+ListCinemasIntent list all cinemas
+ListCinemasIntent to list cinemas
+ListCinemasIntent to list all cinemas
+
+ListMoviesIntent movies
+ListMoviesIntent movies {date}
+ListMoviesIntent movies {date} in {cinema}
+
+ListMoviesIntent about movies
+ListMoviesIntent about movies {date}
+ListMoviesIntent about movies {date} in {cinema}
+
+ListMoviesIntent what movies are playing
+ListMoviesIntent what movies are playing {date}
+ListMoviesIntent what movies are playing {date} in {cinema}
+
+ListMoviesIntent to list movies
+ListMoviesIntent to list movies {date}
+ListMoviesIntent to list movies {date} in {cinema}
+
+QueryMovieIntent when {movie} plays
+QueryMovieIntent when {movie} plays in {cinema}
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit
