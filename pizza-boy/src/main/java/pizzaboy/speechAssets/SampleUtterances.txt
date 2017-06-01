@@ -1,0 +1,9 @@
+GetAddressIntent to get my address
+GetAddressIntent get my address
+GetAddressIntent what is my address
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit
