@@ -17,10 +17,11 @@ import homecontrol.HttpRequest;
 import homecontrol.Responder;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,13 +41,14 @@ public class FinnkinoSpeechlet implements Speechlet {
     private static final String SESSION_ISWHATNEXT = "isWhatNext";
     private static final String SLOT_CINEMA = "cinema";
     private static final String SLOT_DATE = "date";
-    private static final String OMENA_NAME = "Espoo big apple";
-    private static final String OMENA_ID = "1039";
+    private static final String SLOT_MOVIE = "movie";
+    private static final String DEFAULT_CINEMA_NAME = "Espoo big apple";
+    private static final String DEFAULT_CINEMA_ID = "1039";
     private static final String URL = "http://www.finnkino.fi/xml/Schedule?";
     private static final HashMap<String, String> CINEMAS = new HashMap<>();
 
     static {
-        CINEMAS.put(OMENA_NAME, OMENA_ID);
+        CINEMAS.put(DEFAULT_CINEMA_NAME, DEFAULT_CINEMA_ID);
         CINEMAS.put("Espoo cello", "1038");
         CINEMAS.put("Helsinki tennis palace", "1033");
         CINEMAS.put("Helsinki kino palace", "1031");
@@ -136,8 +138,8 @@ public class FinnkinoSpeechlet implements Speechlet {
     private SpeechletResponse handleListMoviesRequest(final Intent intent, final Session session) {
         String speechText;
 
-        String cinemaId = OMENA_ID;
-        String cinemaName = OMENA_NAME;
+        String cinemaId = DEFAULT_CINEMA_ID;
+        String cinemaName = DEFAULT_CINEMA_NAME;
         Slot cinemaSlot = intent.getSlot(SLOT_CINEMA);
         if (cinemaSlot != null && cinemaSlot.getValue() != null) {
             cinemaName = cinemaSlot.getValue();
@@ -156,18 +158,21 @@ public class FinnkinoSpeechlet implements Speechlet {
         DateTimeFormatter alexaFormatter = DateTimeFormatter.ofPattern("d MMM");
         String alexaDay = date.format(alexaFormatter);
 
-        List<String> movies = getMovies(apiDay, cinemaId);
+        Map<String, String> movies = getMovies(apiDay, cinemaId);
         if (movies.isEmpty()) {
             speechText = "No movies today.";
         } else {
             speechText = alexaDay + " in " + cinemaName + " are playing: ";
-            for (int i = 0; i < movies.size() - 1; i++) {
-                if (i != 0) {
+            Iterator<String> iter = movies.keySet().iterator();
+            boolean isFirst = true;
+            while(iter.hasNext()) {
+                if (!isFirst) {
                     speechText += ", ";
+                } else {
+                    isFirst = false;
                 }
-                speechText += movies.get(i);
+                speechText += iter.next();
             }
-            speechText += " and " + movies.get(movies.size() - 1);
         }
 
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
@@ -181,11 +186,10 @@ public class FinnkinoSpeechlet implements Speechlet {
         DateTimeFormatter apiFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         String apiDay = date.format(apiFormatter);
 
-        String cinemaId = OMENA_ID;
-        String cinemaName = OMENA_NAME;
+        String cinemaId = DEFAULT_CINEMA_ID;
         Slot cinemaSlot = intent.getSlot(SLOT_CINEMA);
         if (cinemaSlot != null && cinemaSlot.getValue() != null) {
-            cinemaName = cinemaSlot.getValue();
+            String cinemaName = cinemaSlot.getValue();
             cinemaId = CINEMAS.get(cinemaName);
         }
 
@@ -196,12 +200,17 @@ public class FinnkinoSpeechlet implements Speechlet {
         }
 
         if (movie == null) {
-            speechText = "No movies today.";
+            speechText = "No movie specified.";
         } else {
-            List<String> movies = getMovies(apiDay, cinemaId);
+            Map<String, String> movies = getMovies(apiDay, cinemaId);
             if (movies.isEmpty()) {
                 speechText = "No movies today.";
             } else {
+                if(movies.containsKey(movie)) {
+                    speechText = movie + " plays at " + movies.get(movie);
+                } else {
+                    speechText = movie + " does not play today.";
+                }
             }
         }
 
@@ -209,8 +218,8 @@ public class FinnkinoSpeechlet implements Speechlet {
         return responder.respond(speechText, isWhatNext);
     }
 
-    private List<String> getMovies(String date, String area) {
-        List<String> movies = new ArrayList<>();
+    private Map<String, String> getMovies(String date, String area) {
+        Map<String, String> movies = new HashMap<>();
 
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -223,8 +232,10 @@ public class FinnkinoSpeechlet implements Speechlet {
             for (int idxShow = 0; idxShow < shows.getLength(); idxShow++) {
                 Element show = (Element) shows.item(idxShow);
                 String title = show.getElementsByTagName("OriginalTitle").item(0).getTextContent();
-                if (title != null) {
+                String time = show.getElementsByTagName("dttmShowStart").item(0).getTextContent();
+                if (title != null && time != null) {
                     title = trimTitle(title);
+                    LocalDateTime showTime = LocalDateTime.parse(time);
                     String language = show.getElementsByTagName("PresentationMethodAndLanguage").item(0).getTextContent();
                     if (language == null) {
                         language = "";
@@ -234,9 +245,9 @@ public class FinnkinoSpeechlet implements Speechlet {
 
                     if (!language.contains("suomi")
                             && !language.contains("ruotsi")
-                            && !movies.contains(title)
+                            && !movies.keySet().contains(title)
                             && !title.contains("(dub)")) {
-                        movies.add(title);
+                        movies.put(title, showTime.format(DateTimeFormatter.ISO_LOCAL_TIME));
                     }
                 }
             }
