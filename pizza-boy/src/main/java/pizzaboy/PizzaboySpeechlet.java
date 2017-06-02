@@ -12,6 +12,7 @@ import com.amazon.speech.speechlet.SessionStartedRequest;
 import com.amazon.speech.speechlet.Speechlet;
 import com.amazon.speech.speechlet.SpeechletException;
 import com.amazon.speech.speechlet.SpeechletResponse;
+import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 import com.amazonaws.util.json.JSONTokener;
@@ -21,10 +22,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import org.apache.commons.io.IOUtils;
 
 public class PizzaboySpeechlet implements Speechlet {
 
@@ -87,10 +84,8 @@ public class PizzaboySpeechlet implements Speechlet {
         String speechText = "Your address is ";
         String token = session.getUser().getAccessToken();
 
-        Map<String, String> response = sendGet("https://people.googleapis.com/v1/people/me", token);
-        for (String key : response.keySet()) {
-            speechText += key + " ";
-        }
+        String address = getAddress(token);
+        speechText += address;
 
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         return responder.respond(speechText, isWhatNext);
@@ -106,12 +101,11 @@ public class PizzaboySpeechlet implements Speechlet {
         return responder.askResponse(speechText);
     }
 
-    private Map<String, String> sendGet(String url, String token) {
-        Map<String, String> ret = new HashMap<>();
-
+    private String getAddress(String token) {
+        String ret = null;
         StringBuffer response = null;
         try {
-            URL obj = new URL(url);
+            URL obj = new URL("https://people.googleapis.com/v1/people/me?requestMask.includeField=person.addresses");
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
             // optional default is GET
@@ -119,17 +113,19 @@ public class PizzaboySpeechlet implements Speechlet {
 
             //add request header
             con.setRequestProperty("Authorization", "Bearer " + token);
+            LOG.info("Token is : " + token);
 
             int responseCode = con.getResponseCode();
-            LOG.info("\nSending 'GET' request to URL : " + url);
             LOG.info("Response Code : " + responseCode);
 
-            try (BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()))) {
-                String inputLine;
-                response = new StringBuffer();
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
+            if (responseCode == 200) {
+                try (BufferedReader in = new BufferedReader(
+                        new InputStreamReader(con.getInputStream()))) {
+                    String inputLine;
+                    response = new StringBuffer();
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
                 }
             }
         } catch (IOException ex) {
@@ -139,11 +135,15 @@ public class PizzaboySpeechlet implements Speechlet {
         if (response != null && response.length() != 0) {
             try {
                 JSONObject responseObject = new JSONObject(new JSONTokener(response.toString()));
-                Iterator<String> iterator = responseObject.sortedKeys();
-                while (iterator.hasNext()) {
-                    String key = iterator.next();
-                    String value = responseObject.getString(key);
-                    ret.put(key, value);
+                JSONArray addresses = responseObject.getJSONArray("addresses");
+                for(int i = 0; i < addresses.length(); i++) {
+                    JSONObject address = addresses.getJSONObject(i);
+                    String type = address.getString("type");
+                    String text = address.getString("formattedValue");
+                    if(type.equals("home")) {
+                        ret = text;
+                        break;
+                    }
                 }
             } catch (JSONException e) {
                 LOG.error("Failed to parse service response.", e);
@@ -151,48 +151,6 @@ public class PizzaboySpeechlet implements Speechlet {
         }
 
         return ret;
-    }
-
-    public Map<String, String> get(String path, Map<String, String> parameters) {
-        Map<String, String> response = null;
-
-//        String queryString = query(parameters);
-        InputStreamReader inputStream = null;
-        BufferedReader bufferedReader = null;
-        StringBuilder builder = new StringBuilder();
-        try {
-            String line;
-            URL url = new URL(path);
-            inputStream = new InputStreamReader(url.openStream());
-            bufferedReader = new BufferedReader(inputStream);
-            while ((line = bufferedReader.readLine()) != null) {
-                builder.append(line);
-            }
-        } catch (Exception e) {
-            // reset builder to a blank string
-            LOG.error("Failed to call web service.", e);
-            builder.setLength(0);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
-            IOUtils.closeQuietly(bufferedReader);
-        }
-
-        if (builder.length() != 0) {
-            response = new HashMap<>();
-            try {
-                JSONObject responseObject = new JSONObject(new JSONTokener(builder.toString()));
-                Iterator<String> iterator = responseObject.sortedKeys();
-                while (iterator.hasNext()) {
-                    String key = iterator.next();
-                    String value = responseObject.getString(key);
-                    response.put(key, value);
-                }
-            } catch (JSONException e) {
-                LOG.error("Failed to parse service response.", e);
-            }
-        }
-
-        return response;
     }
 
 }
