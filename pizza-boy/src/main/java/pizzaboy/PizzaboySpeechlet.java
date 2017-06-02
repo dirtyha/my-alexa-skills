@@ -101,17 +101,17 @@ public class PizzaboySpeechlet implements Speechlet {
         return responder.askResponse(speechText);
     }
 
-    private String getAddress(String token) {
+    private String getGoogleProfile(String token) {
         String ret = null;
         StringBuffer response = null;
         try {
-            URL obj = new URL("https://people.googleapis.com/v1/people/me?requestMask.includeField=person.addresses");
+            URL obj = new URL("https://people.googleapis.com/v1/people/me?requestMask.includeField=person.names,person.addresses");
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
             // optional default is GET
             con.setRequestMethod("GET");
 
-            //add request header
+            //add authentication
             con.setRequestProperty("Authorization", "Bearer " + token);
             LOG.info("Token is : " + token);
 
@@ -135,12 +135,18 @@ public class PizzaboySpeechlet implements Speechlet {
         if (response != null && response.length() != 0) {
             try {
                 JSONObject responseObject = new JSONObject(new JSONTokener(response.toString()));
+
+                JSONArray names = responseObject.getJSONArray("names");
+                JSONObject name = names.getJSONObject(0);
+                String familyName = name.getString("familyName");
+                String givenName = name.getString("givenName");
+
                 JSONArray addresses = responseObject.getJSONArray("addresses");
-                for(int i = 0; i < addresses.length(); i++) {
+                for (int i = 0; i < addresses.length(); i++) {
                     JSONObject address = addresses.getJSONObject(i);
                     String type = address.getString("type");
                     String text = address.getString("formattedValue");
-                    if(type.equals("home")) {
+                    if (type.equals("home")) {
                         ret = text;
                         break;
                     }
