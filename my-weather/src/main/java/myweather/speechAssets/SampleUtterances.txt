@@ -1,0 +1,15 @@
+CurrentWeatherIntent observations
+CurrentWeatherIntent to list observations
+CurrentWeatherIntent list observations
+CurrentWeatherIntent to give observations
+CurrentWeatherIntent give observations
+
+ForecastedWeatherIntent forecast for {time}
+ForecastedWeatherIntent to give forecast for {time}
+ForecastedWeatherIntent give forecast for {time}
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit
