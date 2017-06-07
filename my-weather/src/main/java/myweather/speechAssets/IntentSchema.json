@@ -13,8 +13,8 @@
       "intent": "CurrentWeatherIntent",
       "slots": [
         {
-          "name": "location",
-          "type": "LIST_OF_LOCATIONS"
+          "name": "place",
+          "type": "LIST_OF_PLACES"
         }
       ]
     },
@@ -22,8 +22,8 @@
       "intent": "ForecastedWeatherIntent",
       "slots": [
         {
-          "name": "location",
-          "type": "LIST_OF_LOCATIONS"
+          "name": "place",
+          "type": "LIST_OF_PLACES"
         },
         {
           "name": "time",
