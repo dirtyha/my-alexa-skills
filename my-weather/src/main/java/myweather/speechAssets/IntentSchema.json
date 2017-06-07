@@ -10,10 +10,26 @@
       "intent": "AMAZON.StopIntent"
     },
     {
-      "intent": "CurrentWeatherIntent"
+      "intent": "CurrentWeatherIntent",
+      "slots": [
+        {
+          "name": "location",
+          "type": "LIST_OF_LOCATIONS"
+        }
+      ]
     },
     {
-      "intent": "ForecastedWeatherIntent"
+      "intent": "ForecastedWeatherIntent",
+      "slots": [
+        {
+          "name": "location",
+          "type": "LIST_OF_LOCATIONS"
+        },
+        {
+          "name": "time",
+          "type": "LIST_OF_TIMES"
+        }
+      ]
     }
   ]
 }
