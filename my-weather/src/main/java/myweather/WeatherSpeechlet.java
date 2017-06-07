@@ -26,7 +26,9 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +36,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class WeatherSpeechlet implements Speechlet {
@@ -187,10 +190,18 @@ public class WeatherSpeechlet implements Speechlet {
 
             Element list = (Element) doc.getElementsByTagName("gml:doubleOrNilReasonTupleList").item(0);
             String obsList = list.getTextContent();
-            String tokens[] = obsList.trim().split(" ");
-            for(int i = 0; i < 1; i++) {
-                observations.put("temperature", tokens[i]);
+            String values[] = obsList.trim().split(" ");
+
+            List<String> fieldNames = new ArrayList<>();
+            Element dataRecord = (Element) doc.getElementsByTagName("swe:DataRecord").item(0);
+            NodeList fields = dataRecord.getElementsByTagName("swe:field");
+            for(int i = 0; i < fields.getLength(); i++) {
+                Element field = (Element)fields.item(i);
+                String name = field.getAttribute("name");
+                fieldNames.add(name);
             }
+
+            setObservations(observations, values, fieldNames);
         } catch (ParserConfigurationException | DOMException | SAXException | IOException e) {
             // reset builder to a blank string
             System.out.println("Failed to read observations.");
@@ -199,6 +210,10 @@ public class WeatherSpeechlet implements Speechlet {
         return observations;
     }
 
+    private void setObservations(Map<String, String> observations, String values[], List<String> fieldNames) {
+        // TODO
+    }
+    
     private String getAddressFromGoogleProfile(String token, String addressType) {
         String ret = null;
         StringBuffer response = null;
