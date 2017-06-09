@@ -41,7 +41,7 @@ public class Responder {
     }
 
     public SpeechletResponse askResponse(String speechText) {
-        return askResponse(speechText, null);
+        return askResponse(speechText, speechText);
     }
 
     public SpeechletResponse askResponse(String speechText, String repromptText) {

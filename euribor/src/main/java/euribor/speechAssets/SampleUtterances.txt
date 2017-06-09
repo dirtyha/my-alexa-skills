@@ -1,0 +1,21 @@
+GetEuriborIntent rates
+GetEuriborIntent interest rates
+GetEuriborIntent to get rates
+GetEuriborIntent to get the rates
+GetEuriborIntent to get interest rates
+GetEuriborIntent to get the interest rates
+GetEuriborIntent to list rates
+GetEuriborIntent to list the rates
+GetEuriborIntent to list interest rates
+GetEuriborIntent to list the interest rates
+GetEuriborIntent what are rates
+GetEuriborIntent what are the rates
+GetEuriborIntent what are interest rates
+GetEuriborIntent what are the interest rates
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent quit
+AMAZON.StopIntent good bye
+AMAZON.StopIntent exit
