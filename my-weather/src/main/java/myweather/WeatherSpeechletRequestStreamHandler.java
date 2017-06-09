@@ -19,8 +19,8 @@ public class WeatherSpeechletRequestStreamHandler extends SpeechletRequestStream
          * Alexa Skill and put the relevant Application Ids in this Set.
          */
         supportedApplicationIds = new HashSet<String>();
-//        String appId = System.getenv("application_id");
-//        supportedApplicationIds.add(appId);
+        String appId = System.getenv("application_id");
+        supportedApplicationIds.add(appId);
     }
 
     public WeatherSpeechletRequestStreamHandler() {

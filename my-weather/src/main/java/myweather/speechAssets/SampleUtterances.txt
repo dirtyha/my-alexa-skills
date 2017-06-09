@@ -1,21 +1,21 @@
 CurrentWeatherIntent observations
-CurrentWeatherIntent observations at {location}
+CurrentWeatherIntent observations at {place}
 CurrentWeatherIntent to list observations 
-CurrentWeatherIntent to list observations at {location}
+CurrentWeatherIntent to list observations at {place}
 CurrentWeatherIntent list observations
-CurrentWeatherIntent list observations at {location}
+CurrentWeatherIntent list observations at {place}
 CurrentWeatherIntent to give observations
-CurrentWeatherIntent to give observations {location}
+CurrentWeatherIntent to give observations {place}
 CurrentWeatherIntent give observations
-CurrentWeatherIntent give observations at {location}
+CurrentWeatherIntent give observations at {place}
 
 ForecastedWeatherIntent forecast
 ForecastedWeatherIntent to give forecast
 ForecastedWeatherIntent give forecast
-ForecastedWeatherIntent forecast for {location} at {time}
-ForecastedWeatherIntent forecast for {location}
-ForecastedWeatherIntent to give forecast for {location} at {time}
-ForecastedWeatherIntent give forecast for {location} at {time}
+ForecastedWeatherIntent forecast for {place} at {time}
+ForecastedWeatherIntent forecast for {place}
+ForecastedWeatherIntent to give forecast for {place} at {time}
+ForecastedWeatherIntent give forecast for {place} at {time}
 
 AMAZON.StopIntent stop
 AMAZON.StopIntent done
