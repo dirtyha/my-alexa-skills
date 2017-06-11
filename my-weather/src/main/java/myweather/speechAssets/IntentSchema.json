@@ -10,6 +10,12 @@
       "intent": "AMAZON.StopIntent"
     },
     {
+      "intent": "AddPlacesIntent"
+    },
+    {
+      "intent": "GetPlacesIntent"
+    },
+    {
       "intent": "CurrentWeatherIntent",
       "slots": [
         {

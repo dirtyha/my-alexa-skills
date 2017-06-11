@@ -1,6 +1,7 @@
 package homecontrol;
 
 import com.amazon.speech.speechlet.SpeechletResponse;
+import com.amazon.speech.ui.Card;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.SimpleCard;
@@ -20,10 +21,17 @@ public class Responder {
     }
 
     public SpeechletResponse tellResponse(String speechText) {
-        // Create the Simple card content.
-        SimpleCard card = new SimpleCard();
-        card.setTitle(cardTitle);
-        card.setContent(speechText);
+        return tellResponse(speechText, null);
+    }
+
+    public SpeechletResponse tellResponse(String speechText, Card card) {
+        if (card == null) {
+            // Create the Simple card content.
+            SimpleCard myCard = new SimpleCard();
+            myCard.setTitle(cardTitle);
+            myCard.setContent(speechText);
+            card = myCard;
+        }
 
         // Create the plain text output.
         PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
@@ -64,10 +72,14 @@ public class Responder {
     }
 
     public SpeechletResponse respond(String speechText, boolean isWhatNext) {
+        return respond(speechText, isWhatNext, null);
+    }
+
+    public SpeechletResponse respond(String speechText, boolean isWhatNext, Card card) {
         if (isWhatNext) {
             return askResponse(speechText, "What next?");
         } else {
-            return tellResponse(speechText);
+            return tellResponse(speechText, card);
         }
     }
 }

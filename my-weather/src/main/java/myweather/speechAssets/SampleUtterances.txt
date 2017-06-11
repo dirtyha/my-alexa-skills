@@ -1,24 +1,17 @@
-CurrentWeatherIntent observations
-CurrentWeatherIntent observations at {place}
-CurrentWeatherIntent to list observations 
-CurrentWeatherIntent to list observations at {place}
-CurrentWeatherIntent list observations
-CurrentWeatherIntent list observations at {place}
-CurrentWeatherIntent to give observations
-CurrentWeatherIntent to give observations {place}
-CurrentWeatherIntent give observations
-CurrentWeatherIntent give observations at {place}
+AddPlacesIntent save places
 
-ForecastedWeatherIntent forecast
-ForecastedWeatherIntent to give forecast
-ForecastedWeatherIntent give forecast
-ForecastedWeatherIntent forecast for {place} at {time}
-ForecastedWeatherIntent forecast for {place}
-ForecastedWeatherIntent to give forecast for {place} at {time}
-ForecastedWeatherIntent give forecast for {place} at {time}
+GetPlacesIntent get places
+
+CurrentWeatherIntent get observations
+CurrentWeatherIntent get observations for {place}
+
+ForecastedWeatherIntent get forecast
+ForecastedWeatherIntent get forecast for {place}
+ForecastedWeatherIntent get forecast for {place} at {time}
 
 AMAZON.StopIntent stop
 AMAZON.StopIntent done
 AMAZON.StopIntent finished
+AMAZON.StopIntent good bye
 AMAZON.StopIntent quit
 AMAZON.StopIntent exit

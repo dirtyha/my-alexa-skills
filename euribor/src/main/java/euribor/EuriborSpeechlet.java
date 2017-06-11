@@ -25,8 +25,8 @@ public class EuriborSpeechlet implements Speechlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(EuriborSpeechlet.class);
 
-    private static final String CARD_TITLE = "Bank Tracker";
-    private static final String SKILL_NAME = "Bank Tracker";
+    private static final String CARD_TITLE = "Rates Tracker";
+    private static final String SKILL_NAME = "Rates Tracker";
     private final Responder responder = new Responder(CARD_TITLE);
     private static final String SESSION_ISWHATNEXT = "isWhatNext";
     private static final String URL = "http://www.euribor-rates.eu/";
@@ -81,7 +81,7 @@ public class EuriborSpeechlet implements Speechlet {
     }
 
     private SpeechletResponse getWelcomeResponse() {
-        return responder.askResponse("Ready", getHepText());
+        return responder.askResponse("Welcome to " + CARD_TITLE + ". " + getHepText(), getHepText());
     }
 
     private SpeechletResponse handleHelpRequest() {
@@ -89,7 +89,7 @@ public class EuriborSpeechlet implements Speechlet {
     }
 
     private static String getHepText() {
-        return "You can ask " + SKILL_NAME + " about yesterday's interest rates. "
+        return "You can ask " + SKILL_NAME + " about interest rates. "
                 + "For example, you can say: Alexa, ask " + SKILL_NAME + " to get rates.";
     }
 
@@ -111,8 +111,7 @@ public class EuriborSpeechlet implements Speechlet {
         }
         sb.append(".");
 
-        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
-        return responder.respond(sb.toString(), isWhatNext);
+        return responder.respond(sb.toString(), false);
     }
 
     private static Map<String, String> getRates() {
@@ -128,13 +127,13 @@ public class EuriborSpeechlet implements Speechlet {
             rates.put("1 month", m1);
 
             String m3 = tds.get(9).text();
-            rates.put("3 month", m3);
+            rates.put("3 months", m3);
 
             String m6 = tds.get(13).text();
-            rates.put("6 month", m6);
+            rates.put("6 months", m6);
 
             String m12 = tds.get(17).text();
-            rates.put("12 month", m12);
+            rates.put("12 months", m12);
 
         } catch (IOException e) {
             // reset builder to a blank string
