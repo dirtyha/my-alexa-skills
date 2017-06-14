@@ -1,4 +1,4 @@
-package myweather.storage;
+package storage;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import java.util.HashMap;

@@ -1,6 +1,8 @@
-AddPlacesIntent save places
+SavePlacesIntent save places
+SavePlacesIntent add places
 
 GetPlacesIntent get places
+GetPlacesIntent list places
 
 CurrentWeatherIntent get observations
 CurrentWeatherIntent get observations for {place}

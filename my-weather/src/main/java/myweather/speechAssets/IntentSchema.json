@@ -10,7 +10,7 @@
       "intent": "AMAZON.StopIntent"
     },
     {
-      "intent": "AddPlacesIntent"
+      "intent": "SavePlacesIntent"
     },
     {
       "intent": "GetPlacesIntent"

@@ -42,12 +42,12 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import myweather.storage.PlacesDao;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import storage.PlacesDao;
 
 public class WeatherSpeechlet implements Speechlet {
 
@@ -165,8 +165,8 @@ public class WeatherSpeechlet implements Speechlet {
             return handleForecastedWeatherRequest(intent, session);*/
         } else if ("GetPlacesIntent".equals(intentName)) {
             return handleGetPlacesRequest(intent, session);
-        } else if ("AddPlacesIntent".equals(intentName)) {
-            return handleAddPlacesRequest(intent, session);
+        } else if ("SavePlacesIntent".equals(intentName)) {
+            return handleSavePlacesRequest(intent, session);
         } else if ("AMAZON.HelpIntent".equals(intentName)) {
             return handleHelpRequest();
         } else if ("AMAZON.StopIntent".equals(intentName)) {
@@ -216,7 +216,7 @@ public class WeatherSpeechlet implements Speechlet {
         String userId = session.getUser().getUserId();
         List<String> placeNames = getPlaces(userId);
         if (placeNames.size() > 0) {
-            sb.append("The following places have been saved: ");
+            sb.append("You have saved the following places: ");
             for (int i = 0; i < placeNames.size(); i++) {
                 if (i > 0) {
                     if (i == placeNames.size() - 1) {
@@ -229,7 +229,7 @@ public class WeatherSpeechlet implements Speechlet {
             }
             sb.append(".");
         } else {
-            sb.append("No places have yet been saved. ");
+            sb.append("You have saved no places. ");
             sb.append("You can add new places in Alexa to-do list and ask ");
             sb.append(CARD_TITLE);
             sb.append(" to save them. ");
@@ -242,7 +242,7 @@ public class WeatherSpeechlet implements Speechlet {
         return responder.respond(sb.toString(), isWhatNext);
     }
 
-    private SpeechletResponse handleAddPlacesRequest(final Intent intent, final Session session) {
+    private SpeechletResponse handleSavePlacesRequest(final Intent intent, final Session session) {
         StringBuilder sb = new StringBuilder();
 
         Permissions permissions = session.getUser().getPermissions();
@@ -251,7 +251,7 @@ public class WeatherSpeechlet implements Speechlet {
             String userId = session.getUser().getUserId();
             List<String> placeNames = addPlacesFromList(userId, token);
             if (placeNames.size() > 0) {
-                sb.append("I added the following places from your to-do list: ");
+                sb.append("I saved the following places from your to-do list: ");
                 for (int i = 0; i < placeNames.size(); i++) {
                     if (i > 0) {
                         if (i == placeNames.size() - 1) {
@@ -268,7 +268,7 @@ public class WeatherSpeechlet implements Speechlet {
             }
         } else {
             // permissions not yet granted
-            sb.append("Plese grant list access permission in Alexa application.");
+            sb.append("Plese grant list read and write permission in Alexa application.");
             AskForPermissionsConsentCard card = new AskForPermissionsConsentCard();
             card.setTitle(CARD_TITLE);
             Set<String> set = new HashSet<>();
@@ -295,6 +295,7 @@ public class WeatherSpeechlet implements Speechlet {
         String address = getAddressForPlace(userId, placeName);
         if (address == null) {
             sb.append("Your place " + placeName + " has not been added yet. ");
+            sb.append("Using default place. ");
             address = DEFAULT_ADDRESS;
         }
         String city = getCity(address);
@@ -351,6 +352,7 @@ public class WeatherSpeechlet implements Speechlet {
         String address = getAddressForPlace(userId, placeName);
         if (address == null) {
             sb.append("Your place " + placeName + " has not been added yet. ");
+            sb.append("Using default place. ");
             address = DEFAULT_ADDRESS;
         }
         String location = getLocationFromAddress(address);
