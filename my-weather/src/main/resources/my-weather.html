@@ -1,38 +1,55 @@
-<h1><em>My Weather</em></h1>
+
+<h1><em>My Weather skill</em></h1>
 <h1>Overview</h1>
-<p>My Wether is an Alexa&nbsp;skill which is able to read weather observations and forecats for places in Finland. Observation and forecast data&nbsp;is based on the <a href="https://en.ilmatieteenlaitos.fi/open-data">Finnish Meterological Institute (FMI) open data</a>, which is licenced based on <a href="http://en.ilmatieteenlaitos.fi/open-data-licence">CC BY 4.0 by FMI</a>.</p>
-<p>Weather observations are read from FMI's weather station or observatory closest to the place given by the user. FMI has over 400 stations so the coverage is good all over Finland. The weather forecast is based on RCR HIRLAM numerical forecast.</p>
-<p>User can add his/her different addresses, i.e. 'places', which will be persisted and used by the skill when the user asks observations or forecasts for the given place.&nbsp;</p>
+<p>My Wether is an Amazon Alexa&nbsp;skill. It speaks weather observations and forecats for places in Finland. Observation and forecast data&nbsp;is based on the <a href="https://en.ilmatieteenlaitos.fi/open-data">Finnish Meterological Institute (FMI) open data</a>. FMI open data is licenced based on <a href="http://en.ilmatieteenlaitos.fi/open-data-licence">CC BY 4.0 by FMI</a>.</p>
+<p>Weather observations are read from a FMI weather station closest to the place given by the user. FMI has over 400 stations so the overall coverage is pretty good in most places in Finland. Weather forecast is based on RCR HIRLAM numerical forecast.</p>
+<p>User can configure multiple different locations, i.e. 'places', and place names. User can then ask the skill for observations or forecasts for the given place name.&nbsp;</p>
 <h2>Configuration</h2>
 <h3>Places</h3>
-<p>User can add address for the following place names:</p>
+<p>User can add an address for the following place names:</p>
 <p style="padding-left: 30px;"><em>home, work, school, gym, cabin, downtown, place1, place2 and place3</em></p>
 <p>Places are added to Alexa's to-do list by using the following syntax:</p>
 <p style="padding-left: 30px;"><em>place:&lt;place_name&gt;:&lt;street_address&gt;,&lt;city&gt;</em></p>
-<p>For example:</p>
+<p>Notice that zip code is not needed. For example:</p>
 <p style="padding-left: 30px;">place:school:Nissintie 2,Espoo</p>
-<p>User then asks Alexa to save places:</p>
-<p style="padding-left: 30px;"><em>Alexa, ask My Weather to save places.</em></p>
-<p>Notice that prior to using My Weather skill, the user must grant list read and write permissions to the skill in the ALexa application. After places were persisted then corresponding to-do list items will be automatically removed by the skill. Adding a new place with the same name will overwrite the old place.&nbsp;</p>
-<p>If the user has not saved any places, then My Weather skill will get observations and forecasts for the capital city Helsinki.</p>
+<p>User can add multiple places into the to-do list. Finally, user then asks Alexa to save places:</p>
+<p style="padding-left: 30px;"><em>"Alexa, ask My Weather to save places."</em></p>
+<p>After places were successfully persisted then given to-do list items will be automatically removed by the skill. Adding a new place with the same place name will overwrite old data.&nbsp;</p>
+<p>If the user has not configured any places, then My Weather skill will retrieve observations and forecasts for the capital city Helsinki.</p>
+<h3>Permissions</h3>
+<p>Prior to using the My Weather skill, the user must grant list read and write permissions for the skill in the Alexa application. &nbsp;</p>
 <h2>Example Utterances</h2>
 <ul>
-<li><em>Alexa, open my weather.</em>
+<li><em>"Alexa, open my weather."</em>
 <ul>
 <li>This launches the interactive mode. Exit with <em>exit</em>, <em>stop</em>, <em>good bye</em>&nbsp;etc.</li>
-<li>...get observations</li>
-<li>...get forecast</li>
-<li>etc. similar to one-shot commands listed below, but without <em>Alexa, ask My Weather to...</em></li>
+<li>You can continue like <em>"get observations"</em> or <em>"get forecast"</em>, like in one-shot commands listed below but without <em>"Alexa, ask My Weather to..."</em></li>
 </ul>
 </li>
-<li><em>Alexa, ask My Weather to get observations [for &lt;place_name&gt;]</em>
+<li><em>"Alexa, ask my weather to save places."</em>
 <ul>
-<li>Speaks the latest weather observations for the given place. If place is not specified then observations will be for&nbsp;<em>home</em>, provided that it has been saved (if not then Helsinki will be used).</li>
+<li>This consumes places from Alexa to-do list and persists them for later use.</li>
 </ul>
 </li>
-<li><em>Alexa, ask My Weather to get forecast&nbsp;[for &lt;place_name&gt; [at [tomorrow] &lt;morning|noon|afternoon|evening|night&gt;]]</em><br />
+<li><em>"Alexa, ask my weather to list places."</em>
 <ul>
-<li>Speaks the latest weather forecast for the given place. If place is not specified then forecast&nbsp;will be for&nbsp;<em>home</em>, provided that it has been saved (if not then Helsinki will be used).</li>
+<li>This retrieves the persisted places and lists the place names.</li>
+</ul>
+</li>
+<li><em>"Alexa, ask My Weather to get observations [for &lt;place_name&gt;]"</em>
+<ul>
+<li>Speaks the latest weather observations for the given place. If the place is not specified then observations will be for&nbsp;<em>home</em>, provided that it has been configured (if not then Helsinki will be used).</li>
+<li>For example: <em>"Alexa, ask My Weather to get observations."</em></li>
+<li>For example: <em>"Alexa, ask My Weather to get observations for work."</em></li>
+</ul>
+</li>
+<li><em>"Alexa, ask My Weather to get forecast&nbsp;[for &lt;place_name&gt;] [at [tomorrow] &lt;morning|noon|afternoon|evening|night&gt;]"</em><br />
+<ul>
+<li>Speaks the latest weather forecast for the given place and moment in today or tomorrow. If the place is not specified then forecast&nbsp;will be for&nbsp;<em>home</em>, provided that it has been configured (if not then Helsinki will be used). If the moment is not specified then the next available forecast will be used. Corresponding wall clock times for moments are (starting from morning): 6, 12, 15, 18 and 21.</li>
+<li>For example: <em>"Alexa, ask My Weather to get forecast."</em></li>
+<li>For example: <em>"Alexa, ask My Weather to get forecast at night."</em></li>
+<li>For example: <em>"Alexa, ask My Weather to get forecast for downtown."</em></li>
+<li>For example: <em>"Alexa, ask My Weather to get forecast for home at tomorrow afternoon."</em></li>
 </ul>
 </li>
 </ul>

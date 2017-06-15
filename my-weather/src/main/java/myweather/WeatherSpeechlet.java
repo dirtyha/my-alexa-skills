@@ -14,6 +14,7 @@ import com.amazon.speech.speechlet.Speechlet;
 import com.amazon.speech.speechlet.SpeechletException;
 import com.amazon.speech.speechlet.SpeechletResponse;
 import com.amazon.speech.ui.AskForPermissionsConsentCard;
+import com.amazon.speech.ui.SimpleCard;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
@@ -161,14 +162,14 @@ public class WeatherSpeechlet implements Speechlet {
 
         if ("CurrentWeatherIntent".equals(intentName)) {
             return handleCurrentWeatherRequest(intent, session);
-            /*        } else if ("ForecastedWeatherIntent".equals(intentName)) {
-            return handleForecastedWeatherRequest(intent, session);*/
+        } else if ("ForecastedWeatherIntent".equals(intentName)) {
+            return handleForecastedWeatherRequest(intent, session);
         } else if ("GetPlacesIntent".equals(intentName)) {
             return handleGetPlacesRequest(intent, session);
         } else if ("SavePlacesIntent".equals(intentName)) {
             return handleSavePlacesRequest(intent, session);
         } else if ("AMAZON.HelpIntent".equals(intentName)) {
-            return handleHelpRequest();
+            return handleHelpRequest(session);
         } else if ("AMAZON.StopIntent".equals(intentName)) {
             return responder.tellResponse("Goodbye");
         } else if ("AMAZON.CancelIntent".equals(intentName)) {
@@ -179,15 +180,20 @@ public class WeatherSpeechlet implements Speechlet {
     }
 
     private SpeechletResponse getWelcomeResponse() {
-        return responder.askResponse("Welcome to " + CARD_TITLE, getHelpText());
+        StringBuilder sb = new StringBuilder();
+        sb.append("Welcome to ");
+        sb.append(CARD_TITLE);
+        sb.append(".");
+
+        return responder.askResponse(sb.toString(), getHelpText());
     }
 
     private String getHelpText() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("You can write places in your to-do list and ask ");
+        sb.append("You can add places in your to-do list and ask ");
         sb.append(CARD_TITLE);
-        sb.append(" to save them. ");
+        sb.append(" to persist them. ");
         sb.append("For example, you can say: Alexa, ask ");
         sb.append(CARD_TITLE);
         sb.append(" to save places. ");
@@ -200,14 +206,19 @@ public class WeatherSpeechlet implements Speechlet {
         sb.append("Or: Alexa, ask ");
         sb.append(CARD_TITLE);
         sb.append(" to get forecast for work at tomorrow noon. ");
-        sb.append("Allowed forecast times are: morning, noon, afternoon, evening, night, ");
-        sb.append("tomorrow morning, tomorrow noon, tomorrow afternoon, tomorrow evening and tomorrow night.");
+        sb.append("Allowed forecast times are: morning, noon, afternoon, evening and night. ");
+        sb.append("Check the skill card in Alexa application and follow the link for more documentation about this skill.");
 
         return sb.toString();
     }
 
-    private SpeechletResponse handleHelpRequest() {
-        return responder.askResponse(getHelpText());
+    private SpeechletResponse handleHelpRequest(Session session) {
+        SimpleCard card = new SimpleCard();
+        card.setTitle(CARD_TITLE);
+        card.setContent("For help, check the quick start guide in https://alexapublic.s3.amazonaws.com/my-weather.html");
+        
+        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
+        return responder.respond(getHelpText(), isWhatNext, card);
     }
 
     private SpeechletResponse handleGetPlacesRequest(final Intent intent, final Session session) {
