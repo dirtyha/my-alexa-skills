@@ -8,12 +8,15 @@
 <p>User can add an address for the following place names:</p>
 <p style="padding-left: 30px;"><em>home, work, school, gym, cabin, downtown, place1, place2 and place3</em></p>
 <p>Places are added to Alexa's to-do list by using the following syntax:</p>
-<p style="padding-left: 30px;"><em>place:&lt;place_name&gt;:&lt;street_address&gt;,&lt;city&gt;</em></p>
+<p style="padding-left: 30px;"><em>place:&lt;place_name&gt;:[&lt;street_address&gt;],&lt;city&gt;</em></p>
 <p>Notice that zip code is not needed. For example:</p>
 <p style="padding-left: 30px;">place:school:Nissintie 2,Espoo</p>
-<p>User then asks Alexa to save places:</p>
+<p>You can also give less accurate addresses. For example:</p>
+<p style="padding-left: 30px;">place:school:Nissintie,Espoo</p>
+<p style="padding-left: 30px;">place:school:,Espoo</p>
+<p>User can add multiple places into the to-do list. Finally, user then asks Alexa to save places:</p>
 <p style="padding-left: 30px;"><em>"Alexa, ask My Weather to save places."</em></p>
-<p>After places were successfully persisted then given to-do list items will be automatically removed by the skill. Adding a new place with the same place name will overwrite old data.&nbsp;</p>
+<p>After places were successfully persisted then given to-do list items will be automatically removed by the skill. Adding a new place with the same place name will overwrite old data. Places configured by the user are kept in privacy and not used for any other purpose. For further information see the <a href="https://alexapublic.s3.amazonaws.com/my-weather-policy.html">privacy policy description</a>. &nbsp;</p>
 <p>If the user has not configured any places, then My Weather skill will retrieve observations and forecasts for the capital city Helsinki.</p>
 <h3>Permissions</h3>
 <p>Prior to using the My Weather skill, the user must grant list read and write permissions for the skill in the Alexa application. &nbsp;</p>
