@@ -20,6 +20,14 @@ The AWS Lambda function expects the following environment variables:
 - lines: your preferred bus/train lines in comma separated list e.g. 2065  1,2065K 1,3002E 2,3002L 2,3002L62,3002U 2,3002U32
 - application_id: your alexa skill's application id
 
+## euribor
+This skill reads latest Euribor interest rates and speaks them. This skill is currently alive and can be invoked with name 'Rates Tracker'. For exmaple: Alexa, ask Rates Tracker to get rates. 
+
+## my-weather
+This skill reads weather observations and forecasts for a given place in Finland. See more documentation [here](https://alexapublic.s3.amazonaws.com/my-weather.html). 
+
+## finn-kino
+This skill reads movies currently playing at Finnkino theatres in Espoo Iso-omena. 
+
 ## TODO
 - Integrate my Vaisala GMW90 wall transmitter to home automation system and make Alexe speak measured parameters.
-- Listen news podcasts from YLE 
