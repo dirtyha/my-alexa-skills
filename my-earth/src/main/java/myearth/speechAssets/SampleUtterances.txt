@@ -1,0 +1,13 @@
+GetCOtwoIntent c.o. two
+GetCOtwoIntent carbon dioxide
+GetCOtwoIntent get c.o. two
+GetCOtwoIntent to get c.o. two
+GetCOtwoIntent get carbon dioxide
+GetCOtwoIntent to get carbon dioxide
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent good bye
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit

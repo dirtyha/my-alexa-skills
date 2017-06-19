@@ -14,6 +14,7 @@ import com.amazon.speech.speechlet.Speechlet;
 import com.amazon.speech.speechlet.SpeechletException;
 import com.amazon.speech.speechlet.SpeechletResponse;
 import com.amazon.speech.ui.AskForPermissionsConsentCard;
+import com.amazon.speech.ui.Card;
 import com.amazon.speech.ui.SimpleCard;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -43,6 +44,7 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import location.Google;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -183,12 +185,26 @@ public class WeatherSpeechlet implements Speechlet {
         StringBuilder sb = new StringBuilder();
         sb.append("Welcome to ");
         sb.append(CARD_TITLE);
-        sb.append(".");
+        sb.append(". ");
+        sb.append(getBriefHelpText());
 
-        return responder.askResponse(sb.toString(), getHelpText());
+        return responder.askResponse(sb.toString(), getFullHelpText());
     }
 
-    private String getHelpText() {
+    private String getBriefHelpText() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("You can ask ");
+        sb.append(CARD_TITLE);
+        sb.append(" to get weather observations or forecasts for the saved places. ");
+        sb.append("For example, you can say: Alexa, ask ");
+        sb.append(CARD_TITLE);
+        sb.append(" to get observations for home. ");
+
+        return sb.toString();
+    }
+
+    private String getFullHelpText() {
         StringBuilder sb = new StringBuilder();
 
         sb.append("You can add places in your to-do list and ask ");
@@ -197,12 +213,7 @@ public class WeatherSpeechlet implements Speechlet {
         sb.append("For example, you can say: Alexa, ask ");
         sb.append(CARD_TITLE);
         sb.append(" to save places. ");
-        sb.append("Next you can ask ");
-        sb.append(CARD_TITLE);
-        sb.append(" to get weather observations or forecasts for the saved places. ");
-        sb.append("For example, you can say: Alexa, ask ");
-        sb.append(CARD_TITLE);
-        sb.append(" to get observations for home. ");
+        sb.append(getBriefHelpText());
         sb.append("Or: Alexa, ask ");
         sb.append(CARD_TITLE);
         sb.append(" to get forecast for work at tomorrow noon. ");
@@ -218,11 +229,12 @@ public class WeatherSpeechlet implements Speechlet {
         card.setContent("For help, check the quick start guide in https://alexapublic.s3.amazonaws.com/my-weather.html");
         
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
-        return responder.respond(getHelpText(), isWhatNext, card);
+        return responder.respond(getFullHelpText(), isWhatNext, card);
     }
 
     private SpeechletResponse handleGetPlacesRequest(final Intent intent, final Session session) {
         StringBuilder sb = new StringBuilder();
+        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
 
         String userId = session.getUser().getUserId();
         List<String> placeNames = getPlaces(userId);
@@ -247,15 +259,17 @@ public class WeatherSpeechlet implements Speechlet {
             sb.append("For example, you can say: Alexa, ask ");
             sb.append(CARD_TITLE);
             sb.append(" to save places. ");
+            isWhatNext = false;
         }
 
-        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         return responder.respond(sb.toString(), isWhatNext);
     }
 
     private SpeechletResponse handleSavePlacesRequest(final Intent intent, final Session session) {
         StringBuilder sb = new StringBuilder();
-
+        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
+        Card card = null;
+        
         Permissions permissions = session.getUser().getPermissions();
         if (permissions != null && permissions.getConsentToken() != null) {
             String token = permissions.getConsentToken();
@@ -276,26 +290,26 @@ public class WeatherSpeechlet implements Speechlet {
                 sb.append(".");
             } else {
                 sb.append("There were no places defined in your to-do list.");
+                isWhatNext = false;
             }
         } else {
             // permissions not yet granted
             sb.append("Plese grant list read and write permission in Alexa application.");
-            AskForPermissionsConsentCard card = new AskForPermissionsConsentCard();
-            card.setTitle(CARD_TITLE);
+            AskForPermissionsConsentCard myCard = new AskForPermissionsConsentCard();
+            myCard.setTitle(CARD_TITLE);
             Set<String> set = new HashSet<>();
             set.add("read::alexa:household:list");
             set.add("write::alexa:household:list");
-            card.setPermissions(set);
-
-            return responder.respond(sb.toString(), false, card);
+            myCard.setPermissions(set);
+            isWhatNext = false;
+            card = myCard;
         }
 
-        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
-        return responder.respond(sb.toString(), isWhatNext);
+        return responder.respond(sb.toString(), isWhatNext, card);
     }
 
     private SpeechletResponse handleCurrentWeatherRequest(final Intent intent, final Session session) {
-        boolean isWhatNext = false;
+        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         StringBuilder sb = new StringBuilder();
         String placeName = SLOT_PLACE_DEFAULT_VALUE;
         if (intent.getSlot(SLOT_PLACE) != null && intent.getSlot(SLOT_PLACE).getValue() != null) {
@@ -309,7 +323,7 @@ public class WeatherSpeechlet implements Speechlet {
             sb.append("Using default place. ");
             address = DEFAULT_ADDRESS;
         }
-        String city = getCity(address);
+        String city = Google.getCity(address);
 
         if (city != null && !city.isEmpty()) {
             ZonedDateTime datetime = ZonedDateTime.now(ZoneId.of("Z")).minusHours(1).withMinute(0).withSecond(0).withNano(0);
@@ -336,17 +350,19 @@ public class WeatherSpeechlet implements Speechlet {
                 sb.append("No observations found in ");
                 sb.append(city);
                 sb.append(".");
+                isWhatNext = false;
             }
         } else {
-            sb.append("City is not set in the Google profile address.");
+            sb.append("City is not set in the place address.");
+            isWhatNext = false;
         }
 
-        isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         return responder.respond(sb.toString(), isWhatNext);
     }
 
     private SpeechletResponse handleForecastedWeatherRequest(final Intent intent, final Session session) {
         StringBuilder sb = new StringBuilder();
+        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
 
         String placeName = SLOT_PLACE_DEFAULT_VALUE;
         if (intent.getSlot(SLOT_PLACE) != null && intent.getSlot(SLOT_PLACE).getValue() != null) {
@@ -366,8 +382,8 @@ public class WeatherSpeechlet implements Speechlet {
             sb.append("Using default place. ");
             address = DEFAULT_ADDRESS;
         }
-        String location = getLocationFromAddress(address);
-        String city = getCity(address);
+        String location = Google.getLocationFromAddress(address);
+        String city = Google.getCity(address);
 
         if (location != null && !location.isEmpty()) {
             Map<String, String> forecast = getForecast(location, forecastTime);
@@ -397,14 +413,15 @@ public class WeatherSpeechlet implements Speechlet {
                 sb.append("No forecast found for ");
                 sb.append(placeName);
                 sb.append(".");
+                isWhatNext = false;
             }
         } else {
             sb.append("Location not found for ");
             sb.append(placeName);
             sb.append(".");
+            isWhatNext = false;
         }
 
-        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         return responder.respond(sb.toString(), isWhatNext);
     }
 
@@ -490,18 +507,6 @@ public class WeatherSpeechlet implements Speechlet {
         return forecast;
     }
 
-    private static String getCity(final String address) {
-        String city = null;
-
-        // expects that address format is <street>,<city>
-        String tokens[] = address.split(",");
-        if (tokens.length > 1) {
-            city = tokens[tokens.length - 1].trim();
-        }
-
-        return city;
-    }
-
     private static ZonedDateTime getForecastTime(final String strForecastTime) {
         LocalDateTime forecastTime = LocalDateTime.now();
         int addDays = 0;
@@ -535,31 +540,6 @@ public class WeatherSpeechlet implements Speechlet {
                 .withNano(0);
 
         return ZonedDateTime.of(forecastTime, ZoneId.of("Z"));
-    }
-
-    private static String getLocationFromAddress(String address) {
-        String location = null;
-        String url = URL_GEOCODE + address.replace(' ', '+');
-
-        try {
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(url);
-            doc.getDocumentElement().normalize();
-
-            Element locElement = (Element) doc.getElementsByTagName("location").item(0);
-            String lat = locElement.getElementsByTagName("lat").item(0).getTextContent();
-            String lon = locElement.getElementsByTagName("lng").item(0).getTextContent();
-
-            if (lat != null && lon != null) {
-                location = lat + "," + lon;
-            }
-        } catch (ParserConfigurationException | DOMException | SAXException | IOException ex) {
-            // reset builder to a blank string
-            LOG.error("Failed to read observations.", ex);
-        }
-
-        return location;
     }
 
     private List<String> getPlaces(final String userId) {

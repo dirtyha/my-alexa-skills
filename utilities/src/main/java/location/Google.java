@@ -38,15 +38,10 @@ import org.xml.sax.SAXException;
 public class Google {
 
     private static final Logger LOG = LoggerFactory.getLogger(Google.class);
-    private static final Google INSTANCE = new Google();
     private static final String URL = "https://people.googleapis.com/v1/people/me?requestMask.includeField=person.addresses";
     private static final String URL_GEOCODE = "http://maps.google.com/maps/api/geocode/xml?address=";
 
     private Google() {
-    }
-
-    public static Google getInstance() {
-        return INSTANCE;
     }
 
     /**

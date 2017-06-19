@@ -76,8 +76,9 @@ public class Responder {
     }
 
     public SpeechletResponse respond(String speechText, boolean isWhatNext, Card card) {
+        String what = " What do you wat to do next?";
         if (isWhatNext) {
-            return askResponse(speechText, "What next?");
+            return askResponse(speechText + what, what);
         } else {
             return tellResponse(speechText, card);
         }
