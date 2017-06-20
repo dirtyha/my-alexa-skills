@@ -6,41 +6,29 @@ import org.slf4j.LoggerFactory;
 import com.amazon.speech.slu.Intent;
 import com.amazon.speech.speechlet.IntentRequest;
 import com.amazon.speech.speechlet.LaunchRequest;
-import com.amazon.speech.speechlet.Permissions;
 import com.amazon.speech.speechlet.Session;
 import com.amazon.speech.speechlet.SessionEndedRequest;
 import com.amazon.speech.speechlet.SessionStartedRequest;
 import com.amazon.speech.speechlet.Speechlet;
 import com.amazon.speech.speechlet.SpeechletException;
 import com.amazon.speech.speechlet.SpeechletResponse;
-import com.amazon.speech.ui.AskForPermissionsConsentCard;
-import com.amazon.speech.ui.Card;
 import com.amazon.speech.ui.SimpleCard;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.util.json.JSONArray;
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
-import com.amazonaws.util.json.JSONTokener;
+import handler.PlacesHandler;
 import homecontrol.Responder;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -57,7 +45,6 @@ public class WeatherSpeechlet implements Speechlet {
     private static final Logger LOG = LoggerFactory.getLogger(WeatherSpeechlet.class);
 
     private static final String CARD_TITLE = "My Weather";
-    private final Responder responder = new Responder(CARD_TITLE);
     private static final String SESSION_ISWHATNEXT = "isWhatNext";
     // Get your own API key from https://ilmatieteenlaitos.fi/rekisteroityminen-avoimen-datan-kayttajaksi
     // and place it in Lambda environment variable
@@ -78,8 +65,10 @@ public class WeatherSpeechlet implements Speechlet {
     private static final Map<String, String> FORECAST_FIELDS = new LinkedHashMap<>();
     // default address is used only if no addresses exist in Google profile
     private static final String DEFAULT_ADDRESS = "Mannerheimintie 1, Helsinki";
-    private AmazonDynamoDBClient amazonDynamoDBClient;
+    private AmazonDynamoDBClient dbClient;
     private PlacesDao dao;
+    private Responder responder;
+    private PlacesHandler placesHandler;
 
     static {
         // key: forecast time in spoken text
@@ -126,11 +115,13 @@ public class WeatherSpeechlet implements Speechlet {
         LOG.info("onSessionStarted requestId={}, sessionId={}", request.getRequestId(),
                 session.getSessionId());
 
-        if (amazonDynamoDBClient == null) {
-            amazonDynamoDBClient = new AmazonDynamoDBClient();
-            amazonDynamoDBClient.setRegion(Region.getRegion(Regions.EU_WEST_1));
-            dao = new PlacesDao(amazonDynamoDBClient);
+        if (dbClient == null) {
+            dbClient = new AmazonDynamoDBClient();
+            dbClient.setRegion(Region.getRegion(Regions.EU_WEST_1));
         }
+        dao = new PlacesDao(dbClient);
+        responder = new Responder(CARD_TITLE);
+        placesHandler = new PlacesHandler(CARD_TITLE, dbClient);
 
         // any initialization logic goes here
         session.setAttribute(SESSION_ISWHATNEXT, false);
@@ -167,9 +158,9 @@ public class WeatherSpeechlet implements Speechlet {
         } else if ("ForecastedWeatherIntent".equals(intentName)) {
             return handleForecastedWeatherRequest(intent, session);
         } else if ("GetPlacesIntent".equals(intentName)) {
-            return handleGetPlacesRequest(intent, session);
+            return placesHandler.handleGetPlacesRequest(intent, session);
         } else if ("SavePlacesIntent".equals(intentName)) {
-            return handleSavePlacesRequest(intent, session);
+            return placesHandler.handleSavePlacesRequest(intent, session);
         } else if ("AMAZON.HelpIntent".equals(intentName)) {
             return handleHelpRequest(session);
         } else if ("AMAZON.StopIntent".equals(intentName)) {
@@ -227,85 +218,9 @@ public class WeatherSpeechlet implements Speechlet {
         SimpleCard card = new SimpleCard();
         card.setTitle(CARD_TITLE);
         card.setContent("For help, check the quick start guide in https://alexapublic.s3.amazonaws.com/my-weather.html");
-        
+
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         return responder.respond(getFullHelpText(), isWhatNext, card);
-    }
-
-    private SpeechletResponse handleGetPlacesRequest(final Intent intent, final Session session) {
-        StringBuilder sb = new StringBuilder();
-        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
-
-        String userId = session.getUser().getUserId();
-        List<String> placeNames = getPlaces(userId);
-        if (placeNames.size() > 0) {
-            sb.append("You have saved the following places: ");
-            for (int i = 0; i < placeNames.size(); i++) {
-                if (i > 0) {
-                    if (i == placeNames.size() - 1) {
-                        sb.append(" and ");
-                    } else {
-                        sb.append(", ");
-                    }
-                }
-                sb.append(placeNames.get(i));
-            }
-            sb.append(".");
-        } else {
-            sb.append("You have saved no places. ");
-            sb.append("You can add new places in Alexa to-do list and ask ");
-            sb.append(CARD_TITLE);
-            sb.append(" to save them. ");
-            sb.append("For example, you can say: Alexa, ask ");
-            sb.append(CARD_TITLE);
-            sb.append(" to save places. ");
-            isWhatNext = false;
-        }
-
-        return responder.respond(sb.toString(), isWhatNext);
-    }
-
-    private SpeechletResponse handleSavePlacesRequest(final Intent intent, final Session session) {
-        StringBuilder sb = new StringBuilder();
-        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
-        Card card = null;
-        
-        Permissions permissions = session.getUser().getPermissions();
-        if (permissions != null && permissions.getConsentToken() != null) {
-            String token = permissions.getConsentToken();
-            String userId = session.getUser().getUserId();
-            List<String> placeNames = addPlacesFromList(userId, token);
-            if (placeNames.size() > 0) {
-                sb.append("I saved the following places from your to-do list: ");
-                for (int i = 0; i < placeNames.size(); i++) {
-                    if (i > 0) {
-                        if (i == placeNames.size() - 1) {
-                            sb.append(" and ");
-                        } else {
-                            sb.append(", ");
-                        }
-                    }
-                    sb.append(placeNames.get(i));
-                }
-                sb.append(".");
-            } else {
-                sb.append("There were no places defined in your to-do list.");
-                isWhatNext = false;
-            }
-        } else {
-            // permissions not yet granted
-            sb.append("Plese grant list read and write permission in Alexa application.");
-            AskForPermissionsConsentCard myCard = new AskForPermissionsConsentCard();
-            myCard.setTitle(CARD_TITLE);
-            Set<String> set = new HashSet<>();
-            set.add("read::alexa:household:list");
-            set.add("write::alexa:household:list");
-            myCard.setPermissions(set);
-            isWhatNext = false;
-            card = myCard;
-        }
-
-        return responder.respond(sb.toString(), isWhatNext, card);
     }
 
     private SpeechletResponse handleCurrentWeatherRequest(final Intent intent, final Session session) {
@@ -313,13 +228,15 @@ public class WeatherSpeechlet implements Speechlet {
         StringBuilder sb = new StringBuilder();
         String placeName = SLOT_PLACE_DEFAULT_VALUE;
         if (intent.getSlot(SLOT_PLACE) != null && intent.getSlot(SLOT_PLACE).getValue() != null) {
-            placeName = intent.getSlot(SLOT_PLACE).getValue();
+            placeName = intent.getSlot(SLOT_PLACE).getValue().replace(" ", "");
         }
 
         String userId = session.getUser().getUserId();
-        String address = getAddressForPlace(userId, placeName);
+        String address = placesHandler.getAddressForPlace(userId, placeName);
         if (address == null) {
-            sb.append("Your place " + placeName + " has not been added yet. ");
+            sb.append("Your place ");
+            sb.append(placeName);
+            sb.append(" has not been added yet. ");
             sb.append("Using default place. ");
             address = DEFAULT_ADDRESS;
         }
@@ -330,7 +247,7 @@ public class WeatherSpeechlet implements Speechlet {
             Map<String, String> observations = getObservations(city, datetime);
 
             if (observations.size() > 0) {
-                sb.append("Observations in ");
+                sb.append("Observations for ");
                 sb.append(city);
                 sb.append(" are: ");
 
@@ -347,7 +264,7 @@ public class WeatherSpeechlet implements Speechlet {
                 }
                 sb.append(".");
             } else {
-                sb.append("No observations found in ");
+                sb.append("No observations found for ");
                 sb.append(city);
                 sb.append(".");
                 isWhatNext = false;
@@ -366,7 +283,7 @@ public class WeatherSpeechlet implements Speechlet {
 
         String placeName = SLOT_PLACE_DEFAULT_VALUE;
         if (intent.getSlot(SLOT_PLACE) != null && intent.getSlot(SLOT_PLACE).getValue() != null) {
-            placeName = intent.getSlot(SLOT_PLACE).getValue();
+            placeName = intent.getSlot(SLOT_PLACE).getValue().replace(" ", "");
         }
 
         String time = null;
@@ -376,9 +293,11 @@ public class WeatherSpeechlet implements Speechlet {
         ZonedDateTime forecastTime = getForecastTime(time);
 
         String userId = session.getUser().getUserId();
-        String address = getAddressForPlace(userId, placeName);
+        String address = placesHandler.getAddressForPlace(userId, placeName);
         if (address == null) {
-            sb.append("Your place " + placeName + " has not been added yet. ");
+            sb.append("Your place ");
+            sb.append(placeName);
+            sb.append(" has not been added yet. ");
             sb.append("Using default place. ");
             address = DEFAULT_ADDRESS;
         }
@@ -440,22 +359,24 @@ public class WeatherSpeechlet implements Speechlet {
             doc.getDocumentElement().normalize();
 
             Element list = (Element) doc.getElementsByTagName("gml:doubleOrNilReasonTupleList").item(0);
-            String obsList = list.getTextContent();
-            String values[] = obsList.trim().split(" ");
+            if (list != null) {
+                String obsList = list.getTextContent();
+                String values[] = obsList.trim().split(" ");
 
-            List<String> fieldNames = new ArrayList<>();
-            Element dataRecord = (Element) doc.getElementsByTagName("swe:DataRecord").item(0);
-            NodeList fields = dataRecord.getElementsByTagName("swe:field");
-            for (int i = 0; i < fields.getLength(); i++) {
-                Element field = (Element) fields.item(i);
-                String name = field.getAttribute("name");
-                fieldNames.add(name);
-            }
+                List<String> fieldNames = new ArrayList<>();
+                Element dataRecord = (Element) doc.getElementsByTagName("swe:DataRecord").item(0);
+                NodeList fields = dataRecord.getElementsByTagName("swe:field");
+                for (int i = 0; i < fields.getLength(); i++) {
+                    Element field = (Element) fields.item(i);
+                    String name = field.getAttribute("name");
+                    fieldNames.add(name);
+                }
 
-            for (String field : OBSERVATION_FIELDS.keySet()) {
-                int i = fieldNames.indexOf(field);
-                if (i > -1) {
-                    observations.put(OBSERVATION_FIELDS.get(field), values[i]);
+                for (String field : OBSERVATION_FIELDS.keySet()) {
+                    int i = fieldNames.indexOf(field);
+                    if (i > -1) {
+                        observations.put(OBSERVATION_FIELDS.get(field), values[i]);
+                    }
                 }
             }
         } catch (ParserConfigurationException | DOMException | SAXException | IOException ex) {
@@ -542,136 +463,4 @@ public class WeatherSpeechlet implements Speechlet {
         return ZonedDateTime.of(forecastTime, ZoneId.of("Z"));
     }
 
-    private List<String> getPlaces(final String userId) {
-        Map<String, String> map = dao.getPlaces(userId);
-        return new ArrayList<>(map.keySet());
-    }
-
-    private String getAddressForPlace(final String userId, final String placeName) {
-        return dao.getAddress(userId, placeName);
-    }
-
-    private Map<String, String> getItemsFromList(final String token, final String listId) {
-        Map<String, String> places = new HashMap<>();
-
-        if (token != null) {
-            String url = URL_HOUSEHOLD_LIST + listId + "/active";
-            StringBuffer response = getResponse(url, token);
-            if (response != null && response.length() > 0) {
-                try {
-                    JSONObject responseObject = new JSONObject(new JSONTokener(response.toString()));
-
-                    JSONArray items = responseObject.getJSONArray("items");
-                    for (int i = 0; i < items.length(); i++) {
-                        JSONObject item = items.getJSONObject(i);
-                        String id = item.getString("id");
-                        String value = item.getString("value");
-                        if (value.toLowerCase().contains("place:")) {
-                            places.put(id, value);
-                        }
-                    }
-                } catch (JSONException ex) {
-                    LOG.error("Failed to parse service response.", ex);
-                }
-            }
-        }
-
-        return places;
-    }
-
-    private String getListId(final String token) {
-        String id = null;
-
-        StringBuffer response = getResponse(URL_HOUSEHOLD_LIST, token);
-        if (response != null && response.length() != 0) {
-            try {
-                JSONObject responseObject = new JSONObject(new JSONTokener(response.toString()));
-
-                JSONArray lists = responseObject.getJSONArray("lists");
-                for (int i = 0; i < lists.length(); i++) {
-                    JSONObject list = lists.getJSONObject(i);
-                    String name = list.getString("name");
-                    if (name.equals("Alexa to-do list")) {
-                        id = list.getString("listId");
-                        break;
-                    }
-                }
-            } catch (JSONException ex) {
-                LOG.error("Failed to parse service response.", ex);
-            }
-        }
-
-        return id;
-    }
-
-    private StringBuffer getResponse(final String url, final String token) {
-        StringBuffer response = null;
-        try {
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            // optional default is GET
-            con.setRequestMethod("GET");
-
-            //add authentication
-            con.setRequestProperty("Authorization", "Bearer " + token);
-
-            int responseCode = con.getResponseCode();
-
-            if (responseCode == 200) {
-                try (BufferedReader in = new BufferedReader(
-                        new InputStreamReader(con.getInputStream()))) {
-                    String inputLine;
-                    response = new StringBuffer();
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
-                    }
-                }
-            }
-        } catch (IOException ex) {
-            LOG.error("Failed to send GET request: ", ex);
-        }
-
-        return response;
-    }
-
-    private void delete(final String url, final String token) {
-        try {
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            con.setRequestMethod("DELETE");
-
-            //add authentication
-            con.setRequestProperty("Authorization", "Bearer " + token);
-            int responseCode = con.getResponseCode();
-        } catch (IOException ex) {
-            LOG.error("Failed to send DELETE request: ", ex);
-        }
-    }
-
-    private List<String> addPlacesFromList(final String userId, final String token) {
-        List<String> placeNames = new ArrayList<>();
-
-        String listId = getListId(token);
-        Map<String, String> items = getItemsFromList(token, listId);
-        for (String id : items.keySet()) {
-            String value = items.get(id);
-            String parts[] = value.split(":");
-            if (parts.length == 3) {
-                String placeName = parts[1].toLowerCase();
-                String address = parts[2];
-                dao.savePlace(userId, placeName, address);
-                placeNames.add(placeName);
-            }
-        }
-
-        // delete places from list
-        for (String id : items.keySet()) {
-            String url = URL_HOUSEHOLD_LIST + listId + "/items/" + id;
-            delete(url, token);
-        }
-
-        return placeNames;
-    }
 }
