@@ -1,0 +1,21 @@
+SavePlacesIntent save places
+SavePlacesIntent add places
+
+GetPlacesIntent get places
+GetPlacesIntent list places
+
+CurrentAirQualityIntent observations
+CurrentAirQualityIntent get observations
+CurrentAirQualityIntent get observations for {place}
+
+ForecastedAirQualityIntent forecast
+ForecastedAirQualityIntent get forecast
+ForecastedAirQualityIntent get forecast for {place}
+ForecastedAirQualityIntent get forecast for {place} at {time}
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent done
+AMAZON.StopIntent finished
+AMAZON.StopIntent good bye
+AMAZON.StopIntent quit
+AMAZON.StopIntent exit

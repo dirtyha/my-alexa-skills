@@ -1,4 +1,4 @@
-package myweather;
+package airquality;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,28 +39,28 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-public class WeatherSpeechlet implements Speechlet {
+public class AQSpeechlet implements Speechlet {
 
-    private static final Logger LOG = LoggerFactory.getLogger(WeatherSpeechlet.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AQSpeechlet.class);
 
-    private static final String CARD_TITLE = "My Weather";
+    private static final String CARD_TITLE = "Air Quality";
     private static final String SESSION_ISWHATNEXT = "isWhatNext";
     // Get your own API key from https://ilmatieteenlaitos.fi/rekisteroityminen-avoimen-datan-kayttajaksi
     // and place it in Lambda environment variable
     private static final String APIKEY = System.getenv("api_key");
     private static final String URL_OBSERVATIONS = "http://data.fmi.fi/fmi-apikey/"
             + APIKEY
-            + "/wfs?request=getFeature&storedquery_id=fmi::observations::weather::multipointcoverage";
+            + "/wfs?request=getFeature&storedquery_id=urban::observations::airquality::hourly::multipointcoverage";
     private static final String URL_FORECASTS = "http://data.fmi.fi/fmi-apikey/"
             + APIKEY
-            + "/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::multipointcoverage";
+            + "/wfs?request=getFeature&storedquery_id=fmi::forecast::silam::airquality::surface::point::multipointcoverage";
     private static final String SLOT_TIME = "time";
     private static final String SLOT_PLACE = "place";
     private static final String SLOT_PLACE_DEFAULT_VALUE = "home";
     private static final Map<String, Integer> TIMES = new HashMap<>();
     private static final Map<String, String> OBSERVATION_FIELDS = new LinkedHashMap<>();
     private static final Map<String, String> FORECAST_FIELDS = new LinkedHashMap<>();
-    // default address is used only if no saved places exist 
+    // default address is used only if no saved places exist
     private static final String DEFAULT_ADDRESS = "Mannerheimintie 1, Helsinki";
     private AmazonDynamoDBClient dbClient;
     private Responder responder;
@@ -83,26 +83,26 @@ public class WeatherSpeechlet implements Speechlet {
         // put these values in the order you want to have them spoked by Alexa
         // key: field name in WFS responses
         // value: field name spoken by Alexa
-        OBSERVATION_FIELDS.put("t2m", "temperature");
-        OBSERVATION_FIELDS.put("wd_10min", "wind direction");
-        OBSERVATION_FIELDS.put("ws_10min", "wind speed");
-        OBSERVATION_FIELDS.put("r_1h", "rain fall");
-        OBSERVATION_FIELDS.put("p_sea", "air pressure");
-        OBSERVATION_FIELDS.put("rh", "relative humidity");
-        OBSERVATION_FIELDS.put("td", "dew point temperature");
-        OBSERVATION_FIELDS.put("n_man", "cloud amount");
+        OBSERVATION_FIELDS.put("AQINDEX_PT1H_avg", "air quality index");
+        OBSERVATION_FIELDS.put("PM10_PT1H_avg", "particles < 10 µm");
+        OBSERVATION_FIELDS.put("PM25_PT1H_avg", "particles < 2.5 µm");
+        OBSERVATION_FIELDS.put("SO2_PT1H_avg", "sulphur dioxide");
+        OBSERVATION_FIELDS.put("TRSC_PT1H_avg", "odorous sulphur compounds");
+        OBSERVATION_FIELDS.put("NO_PT1H_avg", "nitrogen monoxide");
+        OBSERVATION_FIELDS.put("NO2_PT1H_avg", "nitrogen dioxide");
+        OBSERVATION_FIELDS.put("O3_PT1H_avg", "ozone");
+        OBSERVATION_FIELDS.put("CO_PT1H_avg", "carbon monoxide");
 
         // put these values in the order you want to have them spoked by Alexa
         // key: field name in WFS responses
         // value: field name spoken by Alexa
-        FORECAST_FIELDS.put("Temperature", "temperature");
-        FORECAST_FIELDS.put("WindDirection", "wind direction");
-        FORECAST_FIELDS.put("WindSpeedMS", "wind speed");
-        FORECAST_FIELDS.put("Precipitation1h", "rain fall");
-        FORECAST_FIELDS.put("Pressure", "air pressure");
-        FORECAST_FIELDS.put("Humidity", "relative humidity");
-        FORECAST_FIELDS.put("DewPoint", "dew point temperature");
-        FORECAST_FIELDS.put("TotalCloudCover", "cloud amount");
+        FORECAST_FIELDS.put("PM10Concentration", "particles < 10 µm");
+        FORECAST_FIELDS.put("PM25Concentration", "particles < 2.5 µm");
+        FORECAST_FIELDS.put("SO2Concentration", "sulphur dioxide");
+        FORECAST_FIELDS.put("COConcentration", "carbon monoxide");
+        FORECAST_FIELDS.put("NOConcentration", "nitrogen monoxide");
+        FORECAST_FIELDS.put("NO2Concentration", "nitrogen dioxide");
+        FORECAST_FIELDS.put("O3Concentration", "ozone");
     }
 
     @Override
@@ -148,10 +148,10 @@ public class WeatherSpeechlet implements Speechlet {
         Intent intent = request.getIntent();
         String intentName = (intent != null) ? intent.getName() : null;
 
-        if ("CurrentWeatherIntent".equals(intentName)) {
-            return handleCurrentWeatherRequest(intent, session);
-        } else if ("ForecastedWeatherIntent".equals(intentName)) {
-            return handleForecastedWeatherRequest(intent, session);
+        if ("CurrentAirQualityIntent".equals(intentName)) {
+            return handleCurrentAirQualityRequest(intent, session);
+        } else if ("ForecastedAirQualityIntent".equals(intentName)) {
+            return handleForecastedAirQualityRequest(intent, session);
         } else if ("GetPlacesIntent".equals(intentName)) {
             return placesHandler.handleGetPlacesRequest(intent, session);
         } else if ("SavePlacesIntent".equals(intentName)) {
@@ -182,7 +182,7 @@ public class WeatherSpeechlet implements Speechlet {
 
         sb.append("You can ask ");
         sb.append(CARD_TITLE);
-        sb.append(" to get weather observations or forecasts for the saved places. ");
+        sb.append(" to get air quality observations or forecasts for the saved places. ");
         sb.append("For example, you can say: Alexa, ask ");
         sb.append(CARD_TITLE);
         sb.append(" to get observations for home. ");
@@ -212,13 +212,13 @@ public class WeatherSpeechlet implements Speechlet {
     private SpeechletResponse handleHelpRequest(Session session) {
         SimpleCard card = new SimpleCard();
         card.setTitle(CARD_TITLE);
-        card.setContent("For help, check the quick start guide in https://alexapublic.s3.amazonaws.com/my-weather.html");
+        card.setContent("For help, check the quick start guide in https://alexapublic.s3.amazonaws.com/air-quality.html");
 
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         return responder.respond(getFullHelpText(), isWhatNext, card);
     }
 
-    private SpeechletResponse handleCurrentWeatherRequest(final Intent intent, final Session session) {
+    private SpeechletResponse handleCurrentAirQualityRequest(final Intent intent, final Session session) {
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         StringBuilder sb = new StringBuilder();
         String placeName = SLOT_PLACE_DEFAULT_VALUE;
@@ -272,7 +272,7 @@ public class WeatherSpeechlet implements Speechlet {
         return responder.respond(sb.toString(), isWhatNext);
     }
 
-    private SpeechletResponse handleForecastedWeatherRequest(final Intent intent, final Session session) {
+    private SpeechletResponse handleForecastedAirQualityRequest(final Intent intent, final Session session) {
         StringBuilder sb = new StringBuilder();
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
 
@@ -343,7 +343,6 @@ public class WeatherSpeechlet implements Speechlet {
         Map<String, String> observations = new LinkedHashMap<>();
 
         // A hack. WFS API has problems in finding data for Vantaa
-        // for some reason this works.
         String myCity = city;
         if(city.toLowerCase().equals("vantaa")) {
             myCity = "tikkurila,vantaa";

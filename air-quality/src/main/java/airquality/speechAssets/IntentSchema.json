@@ -1,0 +1,41 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "SavePlacesIntent"
+    },
+    {
+      "intent": "GetPlacesIntent"
+    },
+    {
+      "intent": "CurrentAirQualityIntent",
+      "slots": [
+        {
+          "name": "place",
+          "type": "LIST_OF_PLACES"
+        }
+      ]
+    },
+    {
+      "intent": "ForecastedAirQualityIntent",
+      "slots": [
+        {
+          "name": "place",
+          "type": "LIST_OF_PLACES"
+        },
+        {
+          "name": "time",
+          "type": "LIST_OF_TIMES"
+        }
+      ]
+    }
+  ]
+}
