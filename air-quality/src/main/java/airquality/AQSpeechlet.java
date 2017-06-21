@@ -60,12 +60,20 @@ public class AQSpeechlet implements Speechlet {
     private static final Map<String, Integer> TIMES = new HashMap<>();
     private static final Map<String, String> OBSERVATION_FIELDS = new LinkedHashMap<>();
     private static final Map<String, String> FORECAST_FIELDS = new LinkedHashMap<>();
+    private static final String AQ_INDEX = "air quality index";
     // default address is used only if no saved places exist
     private static final String DEFAULT_ADDRESS = "Mannerheimintie 1, Helsinki";
+    private static final String[] AQ_INDICES = new String[] {
+        "good", 
+        "satisfactory",
+        "fair",
+        "poor",
+        "very poor"
+    };
     private AmazonDynamoDBClient dbClient;
     private Responder responder;
     private PlacesHandler placesHandler;
-
+    
     static {
         // key: forecast time in spoken text
         // value: forecast time in clock hours
@@ -83,7 +91,7 @@ public class AQSpeechlet implements Speechlet {
         // put these values in the order you want to have them spoked by Alexa
         // key: field name in WFS responses
         // value: field name spoken by Alexa
-        OBSERVATION_FIELDS.put("AQINDEX_PT1H_avg", "air quality index");
+        OBSERVATION_FIELDS.put("AQINDEX_PT1H_avg", AQ_INDEX);
         OBSERVATION_FIELDS.put("PM10_PT1H_avg", "particles < 10 µm");
         OBSERVATION_FIELDS.put("PM25_PT1H_avg", "particles < 2.5 µm");
         OBSERVATION_FIELDS.put("SO2_PT1H_avg", "sulphur dioxide");
@@ -152,6 +160,8 @@ public class AQSpeechlet implements Speechlet {
             return handleCurrentAirQualityRequest(intent, session);
         } else if ("ForecastedAirQualityIntent".equals(intentName)) {
             return handleForecastedAirQualityRequest(intent, session);
+        } else if ("GetIndexIntent".equals(intentName)) {
+            return handleGetIndexRequest(intent, session);
         } else if ("GetPlacesIntent".equals(intentName)) {
             return placesHandler.handleGetPlacesRequest(intent, session);
         } else if ("SavePlacesIntent".equals(intentName)) {
@@ -216,6 +226,55 @@ public class AQSpeechlet implements Speechlet {
 
         boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
         return responder.respond(getFullHelpText(), isWhatNext, card);
+    }
+
+    private SpeechletResponse handleGetIndexRequest(final Intent intent, final Session session) {
+        boolean isWhatNext = (boolean) session.getAttribute(SESSION_ISWHATNEXT);
+        StringBuilder sb = new StringBuilder();
+        String placeName = SLOT_PLACE_DEFAULT_VALUE;
+        if (intent.getSlot(SLOT_PLACE) != null && intent.getSlot(SLOT_PLACE).getValue() != null) {
+            placeName = intent.getSlot(SLOT_PLACE).getValue().replace(" ", "");
+        }
+
+        String userId = session.getUser().getUserId();
+        String address = placesHandler.getAddressForPlace(userId, placeName);
+        if (address == null) {
+            sb.append("Your place ");
+            sb.append(placeName);
+            sb.append(" has not been added yet. ");
+            sb.append("Using default place. ");
+            address = DEFAULT_ADDRESS;
+        }
+        String city = Google.getCity(address);
+        
+        if (city != null && !city.isEmpty()) {
+            ZonedDateTime datetime = ZonedDateTime.now(ZoneId.of("Z")).minusHours(1).withMinute(0).withSecond(0).withNano(0);
+            Map<String, String> observations = getObservations(city, datetime);
+
+            if (observations.size() > 0 && observations.containsKey(AQ_INDEX)) {
+                sb.append("Air quality index for ");
+                sb.append(city);
+                sb.append(" is: ");
+                String value = observations.get(AQ_INDEX);
+                try {
+                    int index = (int)Double.parseDouble(value); 
+                    sb.append(AQ_INDICES[index - 1]);
+                } catch(NumberFormatException ex) {
+                    sb.append(value);
+                }
+                sb.append(".");            
+            } else {
+                sb.append("No observations found for ");
+                sb.append(city);
+                sb.append(".");
+                isWhatNext = false;
+            }
+        } else {
+            sb.append("City is not set in the place address.");
+            isWhatNext = false;
+        }
+
+        return responder.respond(sb.toString(), isWhatNext);
     }
 
     private SpeechletResponse handleCurrentAirQualityRequest(final Intent intent, final Session session) {

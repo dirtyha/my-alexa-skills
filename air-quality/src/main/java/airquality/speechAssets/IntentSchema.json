@@ -16,6 +16,15 @@
       "intent": "GetPlacesIntent"
     },
     {
+      "intent": "GetIndexIntent",
+      "slots": [
+        {
+          "name": "place",
+          "type": "LIST_OF_PLACES"
+        }
+      ]
+    },
+    {
       "intent": "CurrentAirQualityIntent",
       "slots": [
         {

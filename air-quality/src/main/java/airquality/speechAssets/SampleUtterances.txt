@@ -1,8 +1,13 @@
-SavePlacesIntent save places
-SavePlacesIntent add places
+SavePlacesIntent to save places
+SavePlacesIntent to add places
 
 GetPlacesIntent get places
 GetPlacesIntent list places
+
+GetIndexIntent index
+GetIndexIntent index for {place}
+GetIndexIntent get index
+GetIndexIntent get index for {place}
 
 CurrentAirQualityIntent observations
 CurrentAirQualityIntent get observations
