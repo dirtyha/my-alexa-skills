@@ -28,16 +28,16 @@ public class Parameter {
                     this.value = new CloudCoverage(toPrecision(value, 0));
                     break;
                 case DEGREES:
-                    this.value = new Value(toPrecision(value, 1));
+                    this.value = new Value(toPrecision(value, 0));
                     break;
                 case HPA:
-                    this.value = new Value(toPrecision(value, 1));
+                    this.value = new Value(toPrecision(value, 0));
                     break;
                 case MMPH:
-                    this.value = new Value(toPrecision(value, 1));
+                    this.value = new Value(toPrecision(value, 0));
                     break;
                 case MPS:
-                    this.value = new Value(toPrecision(value, 1));
+                    this.value = new Value(toPrecision(value, 0));
                     break;
                 case PERCENT:
                     this.value = new Value(toPrecision(value, 0));
