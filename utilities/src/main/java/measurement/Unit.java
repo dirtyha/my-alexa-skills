@@ -18,6 +18,7 @@ public enum Unit {
     MPS("meters per second"),
     PPM("parts per million"),
     UGM3("micro grams per cubic meter"),
+    AQINDEX(""),
     WINDDIR("");
 
     private final String str;

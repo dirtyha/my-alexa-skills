@@ -25,7 +25,6 @@ public class WindDirection extends Value {
         DIRECTIONS.put("south-west", 247.5); // 202.5-247
         DIRECTIONS.put("west", 292.5); // 247.5-292.5
         DIRECTIONS.put("north-west", 337.5); // 292.5-337.5
-        DIRECTIONS.put("north", 337.5); // 337.5-360.0
     }
 
     public WindDirection(Value windDirection) {
@@ -38,9 +37,11 @@ public class WindDirection extends Value {
 
     @Override
     public String toString() {
-        String text = null;
+        String text = "north";
+        double wd = getValue();
         for (String direction : DIRECTIONS.keySet()) {
-            if (getValue() < DIRECTIONS.get(direction)) {
+            double dir = DIRECTIONS.get(direction);
+            if (wd < dir) {
                 text = direction;
                 break;
             }

@@ -1,19 +1,14 @@
 SavePlacesIntent to save places
 SavePlacesIntent to add places
 
-GetPlacesIntent get places
 GetPlacesIntent list places
 
 GetIndexIntent index
 GetIndexIntent index for {place}
-GetIndexIntent get index
-GetIndexIntent get index for {place}
 
-CurrentAirQualityIntent observations
 CurrentAirQualityIntent get observations
 CurrentAirQualityIntent get observations for {place}
 
-ForecastedAirQualityIntent forecast
 ForecastedAirQualityIntent get forecast
 ForecastedAirQualityIntent get forecast for {place}
 ForecastedAirQualityIntent get forecast for {place} at {time}

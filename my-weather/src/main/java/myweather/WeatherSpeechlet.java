@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import handler.PlacesHandler;
 import homecontrol.Responder;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,6 +40,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import time.TimeUtil;
 
 public class WeatherSpeechlet implements Speechlet {
 
@@ -71,7 +71,6 @@ public class WeatherSpeechlet implements Speechlet {
     private static final String SLOT_TIME = "time";
     private static final String SLOT_PLACE = "place";
     private static final String SLOT_PLACE_DEFAULT_VALUE = "home";
-    private static final Map<String, Integer> TIMES = new HashMap<>();
     private static final Map<String, FieldDescription> OBSERVATION_FIELDS = new LinkedHashMap<>();
     private static final Map<String, FieldDescription> FORECAST_FIELDS = new LinkedHashMap<>();
     // default address is used only if no saved places exist 
@@ -81,18 +80,6 @@ public class WeatherSpeechlet implements Speechlet {
     private PlacesHandler placesHandler;
 
     static {
-        // key: forecast time in spoken text
-        // value: forecast time in clock hours
-        TIMES.put("morning", 6);
-        TIMES.put("noon", 12);
-        TIMES.put("afternoon", 15);
-        TIMES.put("evening", 18);
-        TIMES.put("night", 21);
-        TIMES.put("tomorrow morning", 30);
-        TIMES.put("tomorrow noon", 36);
-        TIMES.put("tomorrow afternoon", 39);
-        TIMES.put("tomorrow evening", 42);
-        TIMES.put("tomorrow night", 45);
 
         // put these values in the order you want to have them spoked by Alexa
         // key: field name in WFS responses
@@ -297,7 +284,7 @@ public class WeatherSpeechlet implements Speechlet {
         if (intent.getSlot(SLOT_TIME) != null && intent.getSlot(SLOT_TIME).getValue() != null) {
             time = intent.getSlot(SLOT_TIME).getValue();
         }
-        ZonedDateTime forecastTime = getForecastTime(time);
+        ZonedDateTime forecastTime = TimeUtil.getForecastTime(time);
 
         String userId = session.getUser().getUserId();
         String address = placesHandler.getAddressForPlace(userId, placeName);
@@ -363,6 +350,7 @@ public class WeatherSpeechlet implements Speechlet {
                 + "&place=" + myCity
                 + "&starttime=" + datetime.format(DateTimeFormatter.ISO_DATE_TIME)
                 + "&endtime=" + datetime.format(DateTimeFormatter.ISO_DATE_TIME);
+        LOG.info("Observation URL: " + url);
 
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -407,7 +395,8 @@ public class WeatherSpeechlet implements Speechlet {
                 + "&latlon=" + location
                 + "&starttime=" + forecastTime.format(DateTimeFormatter.ISO_DATE_TIME)
                 + "&endtime=" + forecastTime.format(DateTimeFormatter.ISO_DATE_TIME);
-
+        LOG.info("Forecast URL: " + url);
+        
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -440,41 +429,6 @@ public class WeatherSpeechlet implements Speechlet {
         }
 
         return forecast;
-    }
-
-    private static ZonedDateTime getForecastTime(final String strForecastTime) {
-        LocalDateTime forecastTime = LocalDateTime.now();
-        int addDays = 0;
-        int hour = 0;
-        if (strForecastTime == null) {
-            // forecast time not specified, use next available 
-            // forecast time counting from current time
-            Iterator<Integer> iter = TIMES.values().iterator();
-            while (iter.hasNext()) {
-                hour = iter.next();
-                if (hour > forecastTime.getHour()) {
-                    if (hour > 24) {
-                        hour -= 24;
-                        addDays += 1;
-                    }
-                    break;
-                }
-            }
-        } else {
-            hour = TIMES.get(strForecastTime);
-            if (hour > 24) {
-                hour -= 24;
-                addDays += 1;
-            }
-        }
-
-        forecastTime = forecastTime.withHour(hour)
-                .plusDays(addDays)
-                .withMinute(0)
-                .withSecond(0)
-                .withNano(0);
-
-        return ZonedDateTime.of(forecastTime, ZoneId.of("Z"));
     }
 
 }

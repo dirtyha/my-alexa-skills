@@ -27,19 +27,34 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import location.Google;
+import measurement.Parameter;
+import measurement.Unit;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import time.TimeUtil;
 
 public class AQSpeechlet implements Speechlet {
+
+    private static class FieldDescription {
+
+        private final String displayName;
+        private final Unit unit;
+
+        private FieldDescription(String displayName, Unit unit) {
+            this.displayName = displayName;
+            this.unit = unit;
+        }
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(AQSpeechlet.class);
 
@@ -57,60 +72,39 @@ public class AQSpeechlet implements Speechlet {
     private static final String SLOT_TIME = "time";
     private static final String SLOT_PLACE = "place";
     private static final String SLOT_PLACE_DEFAULT_VALUE = "home";
-    private static final Map<String, Integer> TIMES = new HashMap<>();
-    private static final Map<String, String> OBSERVATION_FIELDS = new LinkedHashMap<>();
-    private static final Map<String, String> FORECAST_FIELDS = new LinkedHashMap<>();
+    private static final Map<String, FieldDescription> OBSERVATION_FIELDS = new LinkedHashMap<>();
+    private static final Map<String, FieldDescription> FORECAST_FIELDS = new LinkedHashMap<>();
     private static final String AQ_INDEX = "air quality index";
     // default address is used only if no saved places exist
     private static final String DEFAULT_ADDRESS = "Mannerheimintie 1, Helsinki";
-    private static final String[] AQ_INDICES = new String[] {
-        "good", 
-        "satisfactory",
-        "fair",
-        "poor",
-        "very poor"
-    };
     private AmazonDynamoDBClient dbClient;
     private Responder responder;
     private PlacesHandler placesHandler;
     
     static {
-        // key: forecast time in spoken text
-        // value: forecast time in clock hours
-        TIMES.put("morning", 6);
-        TIMES.put("noon", 12);
-        TIMES.put("afternoon", 15);
-        TIMES.put("evening", 18);
-        TIMES.put("night", 21);
-        TIMES.put("tomorrow morning", 30);
-        TIMES.put("tomorrow noon", 36);
-        TIMES.put("tomorrow afternoon", 39);
-        TIMES.put("tomorrow evening", 42);
-        TIMES.put("tomorrow night", 45);
+        // put these values in the order you want to have them spoked by Alexa
+        // key: field name in WFS responses
+        // value: field name spoken by Alexa
+        OBSERVATION_FIELDS.put("AQINDEX_PT1H_avg", new FieldDescription(AQ_INDEX, Unit.AQINDEX));
+        OBSERVATION_FIELDS.put("PM10_PT1H_avg", new FieldDescription("particles < 10 µm", Unit.PPM));
+        OBSERVATION_FIELDS.put("PM25_PT1H_avg", new FieldDescription("particles < 2.5 µm", Unit.PPM));
+        OBSERVATION_FIELDS.put("SO2_PT1H_avg", new FieldDescription("sulphur dioxide", Unit.UGM3));
+        OBSERVATION_FIELDS.put("TRSC_PT1H_avg", new FieldDescription("odorous sulphur compounds", Unit.UGM3));
+        OBSERVATION_FIELDS.put("NO_PT1H_avg", new FieldDescription("nitrogen monoxide", Unit.UGM3));
+        OBSERVATION_FIELDS.put("NO2_PT1H_avg", new FieldDescription("nitrogen dioxide", Unit.UGM3));
+        OBSERVATION_FIELDS.put("O3_PT1H_avg", new FieldDescription("ozone", Unit.UGM3));
+        OBSERVATION_FIELDS.put("CO_PT1H_avg", new FieldDescription("carbon monoxide", Unit.UGM3));
 
         // put these values in the order you want to have them spoked by Alexa
         // key: field name in WFS responses
         // value: field name spoken by Alexa
-        OBSERVATION_FIELDS.put("AQINDEX_PT1H_avg", AQ_INDEX);
-        OBSERVATION_FIELDS.put("PM10_PT1H_avg", "particles < 10 µm");
-        OBSERVATION_FIELDS.put("PM25_PT1H_avg", "particles < 2.5 µm");
-        OBSERVATION_FIELDS.put("SO2_PT1H_avg", "sulphur dioxide");
-        OBSERVATION_FIELDS.put("TRSC_PT1H_avg", "odorous sulphur compounds");
-        OBSERVATION_FIELDS.put("NO_PT1H_avg", "nitrogen monoxide");
-        OBSERVATION_FIELDS.put("NO2_PT1H_avg", "nitrogen dioxide");
-        OBSERVATION_FIELDS.put("O3_PT1H_avg", "ozone");
-        OBSERVATION_FIELDS.put("CO_PT1H_avg", "carbon monoxide");
-
-        // put these values in the order you want to have them spoked by Alexa
-        // key: field name in WFS responses
-        // value: field name spoken by Alexa
-        FORECAST_FIELDS.put("PM10Concentration", "particles < 10 µm");
-        FORECAST_FIELDS.put("PM25Concentration", "particles < 2.5 µm");
-        FORECAST_FIELDS.put("SO2Concentration", "sulphur dioxide");
-        FORECAST_FIELDS.put("COConcentration", "carbon monoxide");
-        FORECAST_FIELDS.put("NOConcentration", "nitrogen monoxide");
-        FORECAST_FIELDS.put("NO2Concentration", "nitrogen dioxide");
-        FORECAST_FIELDS.put("O3Concentration", "ozone");
+        FORECAST_FIELDS.put("PM10Concentration", new FieldDescription("particles < 10 µm", Unit.PPM));
+        FORECAST_FIELDS.put("PM25Concentration", new FieldDescription("particles < 2.5 µm", Unit.PPM));
+        FORECAST_FIELDS.put("SO2Concentration", new FieldDescription("sulphur dioxide", Unit.UGM3));
+        FORECAST_FIELDS.put("COConcentration", new FieldDescription("carbon monoxide", Unit.UGM3));
+        FORECAST_FIELDS.put("NOConcentration", new FieldDescription("nitrogen monoxide", Unit.UGM3));
+        FORECAST_FIELDS.put("NO2Concentration", new FieldDescription("nitrogen dioxide", Unit.UGM3));
+        FORECAST_FIELDS.put("O3Concentration", new FieldDescription("ozone", Unit.UGM3));
     }
 
     @Override
@@ -249,20 +243,18 @@ public class AQSpeechlet implements Speechlet {
         
         if (city != null && !city.isEmpty()) {
             ZonedDateTime datetime = ZonedDateTime.now(ZoneId.of("Z")).minusHours(1).withMinute(0).withSecond(0).withNano(0);
-            Map<String, String> observations = getObservations(city, datetime);
+            List<Parameter> observations = getObservations(city, datetime);
 
-            if (observations.size() > 0 && observations.containsKey(AQ_INDEX)) {
-                sb.append("Air quality index for ");
-                sb.append(city);
-                sb.append(" is: ");
-                String value = observations.get(AQ_INDEX);
-                try {
-                    int index = (int)Double.parseDouble(value); 
-                    sb.append(AQ_INDICES[index - 1]);
-                } catch(NumberFormatException ex) {
-                    sb.append(value);
+            if (observations.size() > 0) {
+                Parameter p = findAq(observations);
+                if(p != null) {
+                    sb.append("In ");
+                    sb.append(city);
+                    sb.append(": ");
+                    sb.append(p);
+                } else {
+                    sb.append("Air quality index not observed.");
                 }
-                sb.append(".");            
             } else {
                 sb.append("No observations found for ");
                 sb.append(city);
@@ -298,7 +290,7 @@ public class AQSpeechlet implements Speechlet {
         
         if (city != null && !city.isEmpty()) {
             ZonedDateTime datetime = ZonedDateTime.now(ZoneId.of("Z")).minusHours(1).withMinute(0).withSecond(0).withNano(0);
-            Map<String, String> observations = getObservations(city, datetime);
+            List<Parameter> observations = getObservations(city, datetime);
 
             if (observations.size() > 0) {
                 sb.append("Observations for ");
@@ -306,15 +298,13 @@ public class AQSpeechlet implements Speechlet {
                 sb.append(" are: ");
 
                 boolean isFirst = true;
-                for (String key : observations.keySet()) {
+                for (Parameter observation : observations) {
                     if (!isFirst) {
                         sb.append(", ");
                     } else {
                         isFirst = false;
                     }
-                    sb.append(key);
-                    sb.append(" ");
-                    sb.append(observations.get(key));
+                    sb.append(observation);
                 }
                 sb.append(".");
             } else {
@@ -344,7 +334,7 @@ public class AQSpeechlet implements Speechlet {
         if (intent.getSlot(SLOT_TIME) != null && intent.getSlot(SLOT_TIME).getValue() != null) {
             time = intent.getSlot(SLOT_TIME).getValue();
         }
-        ZonedDateTime forecastTime = getForecastTime(time);
+        ZonedDateTime forecastTime = TimeUtil.getForecastTime(time);
 
         String userId = session.getUser().getUserId();
         String address = placesHandler.getAddressForPlace(userId, placeName);
@@ -359,7 +349,7 @@ public class AQSpeechlet implements Speechlet {
         String city = Google.getCity(address);
 
         if (location != null && !location.isEmpty()) {
-            Map<String, String> forecast = getForecast(location, forecastTime);
+            List<Parameter> forecast = getForecast(location, forecastTime);
 
             if (forecast.size() > 0) {
                 sb.append("Forecast for ");
@@ -371,15 +361,13 @@ public class AQSpeechlet implements Speechlet {
                 sb.append(" is: ");
 
                 boolean isFirst = true;
-                for (String key : forecast.keySet()) {
+                for (Parameter p : forecast) {
                     if (!isFirst) {
                         sb.append(", ");
                     } else {
                         isFirst = false;
                     }
-                    sb.append(key);
-                    sb.append(" ");
-                    sb.append(forecast.get(key));
+                    sb.append(p);
                 }
                 sb.append(".");
             } else {
@@ -398,8 +386,8 @@ public class AQSpeechlet implements Speechlet {
         return responder.respond(sb.toString(), isWhatNext);
     }
 
-    private static Map<String, String> getObservations(final String city, final ZonedDateTime datetime) {
-        Map<String, String> observations = new LinkedHashMap<>();
+    private static List<Parameter> getObservations(final String city, final ZonedDateTime datetime) {
+        List<Parameter> observations = new LinkedList<>();
 
         // A hack. WFS API has problems in finding data for Vantaa
         String myCity = city;
@@ -435,7 +423,9 @@ public class AQSpeechlet implements Speechlet {
                 for (String field : OBSERVATION_FIELDS.keySet()) {
                     int i = fieldNames.indexOf(field);
                     if (i > -1 && !values[i].equals("NaN")) {
-                        observations.put(OBSERVATION_FIELDS.get(field), values[i]);
+                        FieldDescription desc = OBSERVATION_FIELDS.get(field);
+                        Parameter p = new Parameter(desc.displayName, values[i], desc.unit);
+                        observations.add(p);
                     }
                 }
             }
@@ -446,8 +436,8 @@ public class AQSpeechlet implements Speechlet {
         return observations;
     }
 
-    private static Map<String, String> getForecast(final String location, final ZonedDateTime forecastTime) {
-        Map<String, String> forecast = new LinkedHashMap<>();
+    private static List<Parameter> getForecast(final String location, final ZonedDateTime forecastTime) {
+        List<Parameter> forecast = new LinkedList<>();
 
         String url = URL_FORECASTS
                 + "&latlon=" + location
@@ -476,7 +466,9 @@ public class AQSpeechlet implements Speechlet {
             for (String field : FORECAST_FIELDS.keySet()) {
                 int i = fieldNames.indexOf(field);
                 if (i > -1) {
-                    forecast.put(FORECAST_FIELDS.get(field), values[i]);
+                    FieldDescription desc = FORECAST_FIELDS.get(field);
+                    Parameter p = new Parameter(desc.displayName, values[i], desc.unit);
+                    forecast.add(p);
                 }
             }
         } catch (ParserConfigurationException | DOMException | SAXException | IOException ex) {
@@ -486,39 +478,16 @@ public class AQSpeechlet implements Speechlet {
         return forecast;
     }
 
-    private static ZonedDateTime getForecastTime(final String strForecastTime) {
-        LocalDateTime forecastTime = LocalDateTime.now();
-        int addDays = 0;
-        int hour = 0;
-        if (strForecastTime == null) {
-            // forecast time not specified, use next available 
-            // forecast time counting from current time
-            Iterator<Integer> iter = TIMES.values().iterator();
-            while (iter.hasNext()) {
-                hour = iter.next();
-                if (hour > forecastTime.getHour()) {
-                    if (hour > 24) {
-                        hour -= 24;
-                        addDays += 1;
-                    }
-                    break;
-                }
-            }
-        } else {
-            hour = TIMES.get(strForecastTime);
-            if (hour > 24) {
-                hour -= 24;
-                addDays += 1;
+    private static Parameter findAq(List<Parameter> parameters) {
+        Parameter ret = null;
+        
+        for(Parameter p : parameters) {
+            if(p.toString().contains(AQ_INDEX)) {
+                ret = p;
+                break;
             }
         }
-
-        forecastTime = forecastTime.withHour(hour)
-                .plusDays(addDays)
-                .withMinute(0)
-                .withSecond(0)
-                .withNano(0);
-
-        return ZonedDateTime.of(forecastTime, ZoneId.of("Z"));
+        
+        return ret;
     }
-
 }

@@ -21,6 +21,9 @@ public class Parameter {
 
         if (null != unit) {
             switch (unit) {
+                case AQINDEX:
+                    this.value = new AqIndex(value);
+                    break;
                 case WINDDIR:
                     this.value = new WindDirection(value);
                     break;
