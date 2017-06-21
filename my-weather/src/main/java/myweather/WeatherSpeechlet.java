@@ -27,12 +27,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import location.Google;
+import measurement.Parameter;
+import measurement.Unit;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -40,6 +43,17 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class WeatherSpeechlet implements Speechlet {
+
+    private static class FieldDescription {
+
+        private final String displayName;
+        private final Unit unit;
+
+        private FieldDescription(String displayName, Unit unit) {
+            this.displayName = displayName;
+            this.unit = unit;
+        }
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(WeatherSpeechlet.class);
 
@@ -58,8 +72,8 @@ public class WeatherSpeechlet implements Speechlet {
     private static final String SLOT_PLACE = "place";
     private static final String SLOT_PLACE_DEFAULT_VALUE = "home";
     private static final Map<String, Integer> TIMES = new HashMap<>();
-    private static final Map<String, String> OBSERVATION_FIELDS = new LinkedHashMap<>();
-    private static final Map<String, String> FORECAST_FIELDS = new LinkedHashMap<>();
+    private static final Map<String, FieldDescription> OBSERVATION_FIELDS = new LinkedHashMap<>();
+    private static final Map<String, FieldDescription> FORECAST_FIELDS = new LinkedHashMap<>();
     // default address is used only if no saved places exist 
     private static final String DEFAULT_ADDRESS = "Mannerheimintie 1, Helsinki";
     private AmazonDynamoDBClient dbClient;
@@ -83,26 +97,26 @@ public class WeatherSpeechlet implements Speechlet {
         // put these values in the order you want to have them spoked by Alexa
         // key: field name in WFS responses
         // value: field name spoken by Alexa
-        OBSERVATION_FIELDS.put("t2m", "temperature");
-        OBSERVATION_FIELDS.put("wd_10min", "wind direction");
-        OBSERVATION_FIELDS.put("ws_10min", "wind speed");
-        OBSERVATION_FIELDS.put("r_1h", "rain fall");
-        OBSERVATION_FIELDS.put("p_sea", "air pressure");
-        OBSERVATION_FIELDS.put("rh", "relative humidity");
-        OBSERVATION_FIELDS.put("td", "dew point temperature");
-        OBSERVATION_FIELDS.put("n_man", "cloud amount");
+        OBSERVATION_FIELDS.put("t2m", new FieldDescription("temperature", Unit.DEGREES));
+        OBSERVATION_FIELDS.put("wd_10min", new FieldDescription("wind direction", Unit.WINDDIR));
+        OBSERVATION_FIELDS.put("ws_10min", new FieldDescription("wind speed", Unit.MPS));
+        OBSERVATION_FIELDS.put("r_1h", new FieldDescription("rain fall", Unit.MMPH));
+        OBSERVATION_FIELDS.put("p_sea", new FieldDescription("air pressure", Unit.HPA));
+        OBSERVATION_FIELDS.put("rh", new FieldDescription("relative humidity", Unit.PERCENT));
+        OBSERVATION_FIELDS.put("td", new FieldDescription("dew point temperature", Unit.DEGREES));
+        OBSERVATION_FIELDS.put("n_man", new FieldDescription("cloud coverage", Unit.CLOUDCOVERAGE));
 
         // put these values in the order you want to have them spoked by Alexa
         // key: field name in WFS responses
         // value: field name spoken by Alexa
-        FORECAST_FIELDS.put("Temperature", "temperature");
-        FORECAST_FIELDS.put("WindDirection", "wind direction");
-        FORECAST_FIELDS.put("WindSpeedMS", "wind speed");
-        FORECAST_FIELDS.put("Precipitation1h", "rain fall");
-        FORECAST_FIELDS.put("Pressure", "air pressure");
-        FORECAST_FIELDS.put("Humidity", "relative humidity");
-        FORECAST_FIELDS.put("DewPoint", "dew point temperature");
-        FORECAST_FIELDS.put("TotalCloudCover", "cloud amount");
+        FORECAST_FIELDS.put("Temperature", new FieldDescription("temperature", Unit.DEGREES));
+        FORECAST_FIELDS.put("WindDirection", new FieldDescription("wind direction", Unit.WINDDIR));
+        FORECAST_FIELDS.put("WindSpeedMS", new FieldDescription("wind speed", Unit.MPS));
+        FORECAST_FIELDS.put("Precipitation1h", new FieldDescription("rain fall", Unit.MMPH));
+        FORECAST_FIELDS.put("Pressure", new FieldDescription("air pressure", Unit.HPA));
+        FORECAST_FIELDS.put("Humidity", new FieldDescription("relative humidity", Unit.PERCENT));
+        FORECAST_FIELDS.put("DewPoint", new FieldDescription("dew point temperature", Unit.DEGREES));
+        FORECAST_FIELDS.put("TotalCloudCover", new FieldDescription("cloud coverage", Unit.PERCENT));
     }
 
     @Override
@@ -236,10 +250,10 @@ public class WeatherSpeechlet implements Speechlet {
             address = DEFAULT_ADDRESS;
         }
         String city = Google.getCity(address);
-        
+
         if (city != null && !city.isEmpty()) {
             ZonedDateTime datetime = ZonedDateTime.now(ZoneId.of("Z")).minusHours(1).withMinute(0).withSecond(0).withNano(0);
-            Map<String, String> observations = getObservations(city, datetime);
+            List<Parameter> observations = getObservations(city, datetime);
 
             if (observations.size() > 0) {
                 sb.append("Observations for ");
@@ -247,15 +261,13 @@ public class WeatherSpeechlet implements Speechlet {
                 sb.append(" are: ");
 
                 boolean isFirst = true;
-                for (String key : observations.keySet()) {
+                for (Parameter observation : observations) {
                     if (!isFirst) {
                         sb.append(", ");
                     } else {
                         isFirst = false;
                     }
-                    sb.append(key);
-                    sb.append(" ");
-                    sb.append(observations.get(key));
+                    sb.append(observation);
                 }
                 sb.append(".");
             } else {
@@ -300,7 +312,7 @@ public class WeatherSpeechlet implements Speechlet {
         String city = Google.getCity(address);
 
         if (location != null && !location.isEmpty()) {
-            Map<String, String> forecast = getForecast(location, forecastTime);
+            List<Parameter> forecast = getForecast(location, forecastTime);
 
             if (forecast.size() > 0) {
                 sb.append("Forecast for ");
@@ -312,15 +324,13 @@ public class WeatherSpeechlet implements Speechlet {
                 sb.append(" is: ");
 
                 boolean isFirst = true;
-                for (String key : forecast.keySet()) {
+                for (Parameter p : forecast) {
                     if (!isFirst) {
                         sb.append(", ");
                     } else {
                         isFirst = false;
                     }
-                    sb.append(key);
-                    sb.append(" ");
-                    sb.append(forecast.get(key));
+                    sb.append(p);
                 }
                 sb.append(".");
             } else {
@@ -339,13 +349,13 @@ public class WeatherSpeechlet implements Speechlet {
         return responder.respond(sb.toString(), isWhatNext);
     }
 
-    private static Map<String, String> getObservations(final String city, final ZonedDateTime datetime) {
-        Map<String, String> observations = new LinkedHashMap<>();
+    private static List<Parameter> getObservations(final String city, final ZonedDateTime datetime) {
+        List<Parameter> observations = new LinkedList<>();
 
         // A hack. WFS API has problems in finding data for Vantaa
         // for some reason this works.
         String myCity = city;
-        if(city.toLowerCase().equals("vantaa")) {
+        if (city.toLowerCase().equals("vantaa")) {
             myCity = "tikkurila,vantaa";
         }
 
@@ -377,7 +387,9 @@ public class WeatherSpeechlet implements Speechlet {
                 for (String field : OBSERVATION_FIELDS.keySet()) {
                     int i = fieldNames.indexOf(field);
                     if (i > -1 && !values[i].equals("NaN")) {
-                        observations.put(OBSERVATION_FIELDS.get(field), values[i]);
+                        FieldDescription desc = OBSERVATION_FIELDS.get(field);
+                        Parameter p = new Parameter(desc.displayName, values[i], desc.unit);
+                        observations.add(p);
                     }
                 }
             }
@@ -388,8 +400,8 @@ public class WeatherSpeechlet implements Speechlet {
         return observations;
     }
 
-    private static Map<String, String> getForecast(final String location, final ZonedDateTime forecastTime) {
-        Map<String, String> forecast = new LinkedHashMap<>();
+    private static List<Parameter> getForecast(final String location, final ZonedDateTime forecastTime) {
+        List<Parameter> forecast = new LinkedList<>();
 
         String url = URL_FORECASTS
                 + "&latlon=" + location
@@ -418,7 +430,9 @@ public class WeatherSpeechlet implements Speechlet {
             for (String field : FORECAST_FIELDS.keySet()) {
                 int i = fieldNames.indexOf(field);
                 if (i > -1) {
-                    forecast.put(FORECAST_FIELDS.get(field), values[i]);
+                    FieldDescription desc = FORECAST_FIELDS.get(field);
+                    Parameter p = new Parameter(desc.displayName, values[i], desc.unit);
+                    forecast.add(p);
                 }
             }
         } catch (ParserConfigurationException | DOMException | SAXException | IOException ex) {
