@@ -13,6 +13,11 @@
         <module>heating-control</module>
         <module>home-measurements</module>
         <module>time-table</module>
+        <module>air-quality</module>
+        <module>my-weather</module>
+        <module>euribor</module>
+        <module>finn-kino</module>
+        <module>my-earth</module>
     </modules>
 
 </project>

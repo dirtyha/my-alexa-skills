@@ -1,8 +1,19 @@
 
 <h1><em>Air Quality skill</em></h1>
-<h1>Overview</h1>
+<h2>Overview</h2>
 <p>Air Quality is an Amazon Alexa&nbsp;skill. It speaks air quality observations and forecats for places in Finland. Observation and forecast data&nbsp;is based on the <a href="https://en.ilmatieteenlaitos.fi/open-data">Finnish Meterological Institute (FMI) open data</a>. FMI open data is licenced based on <a href="http://en.ilmatieteenlaitos.fi/open-data-licence">CC BY 4.0 by FMI</a>.</p>
 <p>User can configure multiple different locations, i.e. 'places', and place names. User can then ask the skill for air quality observations or forecasts for the given place name.&nbsp;</p>
+<p>Examples of air quality parameters (presence depends on observation station capabilities):.&nbsp;</p>
+<ul>
+<li>particles < 10 um</li>
+<li>particles < 2.5 um</li>
+<li>sulphur dioxide</li>
+<li>odorous sulphur compounds</li>
+<li>nitrogen monoxide</li>
+<li>nitrogen dioxide</li>
+<li>ozone</li>
+<li>carbon monoxide</li>
+</ul>
 <h2>Configuration</h2>
 <h3>Places</h3>
 <p>User can add an address for the following place names:</p>
@@ -33,6 +44,13 @@
 <li>This lists all the saved place names.</li>
 </ul>
 </li>
+<li><em>"Alexa, ask Air Quality index [for &lt;place_name&gt;]"</em>
+<ul>
+<li>Speaks the latest air quality index (good, satisfactory, fair, poor and very poor) for the given place. If the place is not specified then observations will be for&nbsp;<em>home</em>, provided that it has been configured (if not then Helsinki will be used).</li>
+<li>For example: <em>"Alexa, ask Air Quality index."</em></li>
+<li>For example: <em>"Alexa, ask Air Quality index for work."</em></li>
+</ul>
+</li>
 <li><em>"Alexa, ask Air Quality to get observations [for &lt;place_name&gt;]"</em>
 <ul>
 <li>Speaks the latest air quality observations for the given place. If the place is not specified then observations will be for&nbsp;<em>home</em>, provided that it has been configured (if not then Helsinki will be used).</li>
@@ -50,3 +68,7 @@
 </ul>
 </li>
 </ul>
+<h2>Source code</h2>
+<p>Source code can be found in <a href="https://github.com/dirtyha/my-alexa-skills">GitHub</a></p>
+<h2>Feedback</h2>
+<p>Any feedback is welcome to: <img src="https://alexapublic.s3.amazonaws.com/email.png" alt="" width="204" height="32" /></p>
