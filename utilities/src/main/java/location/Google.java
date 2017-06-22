@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
@@ -117,12 +118,14 @@ public class Google {
             Document doc = dBuilder.parse(url);
             doc.getDocumentElement().normalize();
 
-            Element locElement = (Element) doc.getElementsByTagName("location").item(0);
-            String lat = locElement.getElementsByTagName("lat").item(0).getTextContent();
-            String lon = locElement.getElementsByTagName("lng").item(0).getTextContent();
-
-            if (lat != null && lon != null) {
-                location = lat + "," + lon;
+            NodeList locations = doc.getElementsByTagName("location");
+            if (locations != null && locations.getLength() > 0) {
+                Element locElement = (Element) doc.getElementsByTagName("location").item(0);
+                String lat = locElement.getElementsByTagName("lat").item(0).getTextContent();
+                String lon = locElement.getElementsByTagName("lng").item(0).getTextContent();
+                if (lat != null && lon != null) {
+                    location = lat + "," + lon;
+                }
             }
         } catch (ParserConfigurationException | DOMException | SAXException | IOException ex) {
             // reset builder to a blank string
@@ -137,7 +140,7 @@ public class Google {
 
         // expects that address format is [<street>,]<city>
         String tokens[] = address.split(",");
-        if(tokens.length == 1) {
+        if (tokens.length == 1) {
             city = tokens[0];
         } else if (tokens.length > 1) {
             city = tokens[tokens.length - 1].trim();

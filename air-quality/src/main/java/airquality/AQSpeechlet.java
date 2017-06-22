@@ -377,6 +377,7 @@ public class AQSpeechlet implements Speechlet {
             sb.append("Location not found for ");
             sb.append(placeName);
             sb.append(".");
+            sb.append(" The address may be incorrect.");
             isWhatNext = false;
         }
 
